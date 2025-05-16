@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@/lib/clerk-helper";
 
 // GET /api/posts - Mendapatkan posts untuk pengguna yang login
 export async function GET() {

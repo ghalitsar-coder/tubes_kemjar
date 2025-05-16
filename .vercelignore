@@ -1,0 +1,11 @@
+# Files to ignore during Vercel deployment
+.eslintcache
+.eslintrc
+.eslintrc.json
+.git
+README.md
+*.log
+node_modules
+cKuliahSemester*
+eslint.config.mjs
+tsconfig.tsbuildinfo

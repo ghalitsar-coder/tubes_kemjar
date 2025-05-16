@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs";
+import { headers } from "next/headers";
+import { auth } from "@/lib/clerk-helper";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/hono-clerk-test - Test the Clerk integration with Hono
