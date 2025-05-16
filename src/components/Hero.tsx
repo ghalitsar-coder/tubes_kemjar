@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Hero: React.FC = () => {
@@ -19,10 +20,12 @@ const Hero: React.FC = () => {
               <i className="fas fa-video mr-3" />
               Video Consultation
             </button>
-            <button className="px-8 py-4 bg-blue-800 text-white font-bold rounded-lg hover:bg-blue-900 transition flex items-center justify-center">
-              <i className="fas fa-search mr-3" />
-              Find Doctors
-            </button>
+            <Link href="/dashboard">
+              <button className="px-8 py-4 bg-blue-800 text-white font-bold rounded-lg hover:bg-blue-900 transition flex items-center justify-center">
+                <i className="fas fa-search mr-3" />
+                Find Doctors
+              </button>
+            </Link>
           </div>
 
           <div className="mt-8 flex items-center">

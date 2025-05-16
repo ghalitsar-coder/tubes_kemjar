@@ -34,8 +34,8 @@ const HowItWorks: React.FC = () => {
               src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png"
               alt="How it works"
               className="w-full max-w-md mx-auto"
-              width={50}
-              height={50}
+              width={500}
+              height={500}
             />
           </div>
 
