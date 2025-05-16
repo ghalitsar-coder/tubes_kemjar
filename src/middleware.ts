@@ -9,7 +9,9 @@ const isDoctorRoute = createRouteMatcher(["/dashboard/doctor(.*)"]);
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
+  const authData = await auth();
+  const { userId } = authData;
+  console.log(`Middleware - Auth data available: ${!!userId}`);
   
   // Public routes - allow access
   if (!userId) {
@@ -33,19 +35,29 @@ export default clerkMiddleware(async (auth, req) => {
     // Create a URL for the request
     const url = new URL(req.url);
     
-    // Get user role from custom fetch (you'll need to implement this API endpoint)
-    const roleResponse = await fetch(`${url.origin}/api/users/role?userId=${userId}`, {
+    // Get user role from custom fetch
+    console.log(`Fetching role for userId: ${userId}`);
+    const fetchUrl = `${url.origin}/api/users/role?userId=${userId}`;
+    console.log(`Fetch URL: ${fetchUrl}`);
+    
+    const roleResponse = await fetch(fetchUrl, {
       headers: {
         'Content-Type': 'application/json',
-        // Include any auth headers needed
+        // Pass Clerk session token
+        Authorization: req.headers.get('Authorization') || '',
+        Cookie: req.headers.get('Cookie') || '',
       },
     });
     
     if (!roleResponse.ok) {
-      throw new Error('Failed to fetch user role');
+      const responseText = await roleResponse.text();
+      console.error(`Role fetch failed with status: ${roleResponse.status}, response: ${responseText}`);
+      throw new Error(`Failed to fetch user role: ${roleResponse.status}`);
     }
     
-    const { role } = await roleResponse.json();
+    const userData = await roleResponse.json();
+    console.log('User role data:', userData);
+    const { role } = userData;
     
     // Route access based on role
     if (isStaffRoute(req) && !['STAFF', 'ADMIN'].includes(role)) {

@@ -4,9 +4,19 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId: clerkId } = await auth();
+    const auth_result = await auth();
+    const clerkId = auth_result?.userId;
+    
+    console.log('API - Auth result:', JSON.stringify({ 
+      hasUserId: !!clerkId,
+      requestHeaders: {
+        hasAuth: !!request.headers.get('Authorization'),
+        hasCookie: !!request.headers.get('Cookie')
+      } 
+    }));
     
     if (!clerkId) {
+      console.error('API - No clerk ID found in request');
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -52,11 +62,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ ...user });
-  } catch (error) {
+    return NextResponse.json({ ...user });  } catch (error) {
     console.error("Error fetching user role:", error);
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error(`Error name: ${error.name}, message: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
