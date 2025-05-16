@@ -1,12 +1,30 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { prisma } from "./prisma";
 
-export default clerkMiddleware()
+/**
+ * Get a user's role directly from the database
+ * This function is used by the middleware to check role-based access
+ * without creating an API request loop
+ */
+export async function getUserRole(clerkId: string | null) {
+  if (!clerkId) {
+    return null;
+  }
 
-export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isOAuthUser: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    console.error("Error fetching user role directly:", error);
+    return null;
+  }
 }

@@ -8,7 +8,7 @@ export default authConfig({
 
   // Definisikan OAuth Provider (Google)
   oauth: {
-    providers: ["google"], // Tambahkan provider lain jika diperlukan
+    providers: ["google", "apple", "github"], // Tambahkan provider lain jika diperlukan
   },
 
   // URL-URL penting untuk autentikasi
