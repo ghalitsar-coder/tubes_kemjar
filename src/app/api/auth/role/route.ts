@@ -9,19 +9,19 @@ export async function GET(request: NextRequest) {
     // Mendapatkan userId dari query parameter
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
-    
+
     if (!userId) {
-      return NextResponse.json(
-        { error: "User ID required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
     // Cek apakah request dari middleware
-    const isMiddlewareRequest = request.headers.get('x-middleware-request') === 'true';
-    
+    const isMiddlewareRequest =
+      request.headers.get("x-middleware-request") === "true";
+
     // Debug request
-    console.log(`Role API request for userId: ${userId}, from middleware: ${isMiddlewareRequest}`);
+    console.log(
+      `Role API request for userId: ${userId}, from middleware: ${isMiddlewareRequest}`
+    );
 
     try {
       // Mencari user berdasarkan Clerk ID
@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
       });
 
       if (!user) {
-        console.log(`User not found for clerkId: ${userId}, returning default role`);
+        console.log(
+          `User not found for clerkId: ${userId}, returning default role`
+        );
         // Jika user tidak ditemukan, kita akan gunakan role default
         return NextResponse.json({ role: "USER" });
       }
