@@ -18,7 +18,7 @@ export async function GET() {
 
     // Run prisma migrations
     const { stdout, stderr } = await execAsync("npx prisma migrate deploy");
-    
+
     if (stderr) {
       console.error("Migration error:", stderr);
       return NextResponse.json({ error: stderr }, { status: 500 });
