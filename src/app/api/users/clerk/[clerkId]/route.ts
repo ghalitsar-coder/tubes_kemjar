@@ -6,7 +6,8 @@ import { auth } from "@/lib/clerk-helper";
 export async function GET(
   req: Request,
   { params }: { params: { clerkId: string } }
-) {  try {
+) {
+  try {
     // Check authentication
     const { userId } = auth({ request: req });
 

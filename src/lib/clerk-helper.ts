@@ -2,7 +2,10 @@
  * Helper file untuk transisi dari API Clerk lama ke yang baru
  * Ini membantu kompatibilitas kode untuk deployment di Vercel
  */
-import { getAuth as clerkGetAuth, currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
+import {
+  getAuth as clerkGetAuth,
+  currentUser as clerkCurrentUser,
+} from "@clerk/nextjs/server";
 
 // Versi kompatibilitas dari auth() yang sebelumnya digunakan
 export function auth(options?: { request?: Request }) {
