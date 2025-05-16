@@ -54,12 +54,6 @@ const Navbar: React.FC = () => {
                 </button>
               </SignedOut>
               <SignedIn>
-                <Link
-                  href="/dashboard"
-                  className="hidden md:block px-4 py-2 text-blue-600 font-medium rounded-full border border-blue-600 hover:bg-blue-50 transition mr-2"
-                >
-                  Dashboard
-                </Link>
                 <UserButton afterSignOutUrl="/" />
               </SignedIn>
             </>

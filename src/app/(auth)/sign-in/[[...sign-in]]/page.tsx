@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { SignIn } from "@clerk/nextjs";
+import Link from "next/link";
 import React from "react";
 
 export default function SignInPage() {
@@ -14,12 +15,12 @@ export default function SignInPage() {
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Atau{" "}
-              <a
+              <Link
                 href="/sign-up"
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 daftar jika belum memiliki akun
-              </a>
+              </Link>
             </p>
           </div>
           <div className="mt-8">
@@ -35,7 +36,7 @@ export default function SignInPage() {
               routing="path"
               path="/sign-in"
               signUpUrl="/sign-up"
-              redirectUrl="/"
+              forceRedirectUrl="/"
             />
           </div>
         </div>

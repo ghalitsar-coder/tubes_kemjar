@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import { SignUp } from "@clerk/nextjs";
-import Link from "next/link";
 
 export default function Page() {
   return (
@@ -26,7 +25,7 @@ export default function Page() {
           routing="path"
           path="/sign-up"
           signInUrl="/sign-in"
-          redirectUrl="/dashboard?sync=true"
+          forceRedirectUrl="/"
         />
       </div>
     </div>
