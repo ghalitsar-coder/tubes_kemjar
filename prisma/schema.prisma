@@ -13,23 +13,23 @@ datasource db {
 
 // Existing User model with role field added
 model User {
-  id          Int       @id @default(autoincrement())
-  clerkId     String?   @unique
+  id          Int      @id @default(autoincrement())
+  clerkId     String?  @unique
   name        String
-  email       String    @unique
+  email       String   @unique
   password    String
   profilePic  String?
-  isOAuthUser Boolean?  @default(false)
-  role        UserRole  @default(PATIENT)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isOAuthUser Boolean? @default(false)
+  role        UserRole @default(PATIENT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  patient     Patient?
-  doctor      Doctor?
-  staff       Staff?
+  patient      Patient?
+  doctor       Doctor?
+  staff        Staff?
   appointments Appointment[] @relation("PatientAppointments")
-  posts       Post[]
+  posts        Post[]
 }
 
 // User roles
@@ -42,63 +42,63 @@ enum UserRole {
 
 // Patient profile
 model Patient {
-  id              Int       @id @default(autoincrement())
-  userId          Int       @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dateOfBirth     DateTime?
-  gender          String?
-  bloodType       String?
-  height          Float?
-  weight          Float?
-  allergies       String?
-  medicalHistory  String?
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth      DateTime?
+  gender           String?
+  bloodType        String?
+  height           Float?
+  weight           Float?
+  allergies        String?
+  medicalHistory   String?
   emergencyContact String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 // Doctor profile
 model Doctor {
-  id              Int       @id @default(autoincrement())
-  userId          Int       @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   specialization  String
-  licenseNumber   String    @unique
-  experience      Int       @default(0)
+  licenseNumber   String   @unique
+  experience      Int      @default(0)
   education       String?
   bio             String?
-  consultationFee Decimal?  @db.Decimal(10, 2)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  consultationFee Decimal? @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   // Relations
-  appointments    Appointment[] @relation("DoctorAppointments")
-  schedule        Schedule[]
-  specialties     DoctorSpecialty[]
+  appointments Appointment[]     @relation("DoctorAppointments")
+  schedule     Schedule[]
+  specialties  DoctorSpecialty[]
 }
 
 // Staff/Admin profile
 model Staff {
-  id              Int       @id @default(autoincrement())
-  userId          Int       @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  position        String
-  department      String?
-  joinDate        DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position   String
+  department String?
+  joinDate   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 // Medical specialties
 model Specialty {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
-  doctors     DoctorSpecialty[]
+  doctors DoctorSpecialty[]
 }
 
 // Many-to-many relation between Doctor and Specialty
@@ -116,33 +116,33 @@ model DoctorSpecialty {
 
 // Doctor schedule
 model Schedule {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   doctorId    Int
-  doctor      Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  dayOfWeek   Int       // 0 = Sunday, 1 = Monday, etc.
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int // 0 = Sunday, 1 = Monday, etc.
   startTime   DateTime
   endTime     DateTime
-  isAvailable Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // Appointment
 model Appointment {
-  id          Int       @id @default(autoincrement())
-  patientId   Int
-  patient     User      @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctorId    Int
-  doctor      Doctor    @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  date        DateTime
-  startTime   DateTime
-  endTime     DateTime
-  status      AppointmentStatus @default(PENDING)
-  type        AppointmentType   @default(IN_PERSON)
-  reason      String
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        Int               @id @default(autoincrement())
+  patientId Int
+  patient   User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctorId  Int
+  doctor    Doctor            @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  status    AppointmentStatus @default(PENDING)
+  type      AppointmentType   @default(IN_PERSON)
+  reason    String
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 }
 
 // Appointment status
