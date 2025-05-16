@@ -34,6 +34,8 @@ const Testimonials: React.FC = () => {
                   src={t.img}
                   alt={t.name}
                   className="w-12 h-12 rounded-full"
+                     width={50}
+              height={50}
                 />
                 <div className="ml-4">
                   <h4 className="font-bold">{t.name}</h4>

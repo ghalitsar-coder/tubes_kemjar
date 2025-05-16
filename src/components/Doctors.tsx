@@ -49,6 +49,8 @@ const Doctors: React.FC = () => {
                 src={doc.img}
                 alt={doc.name}
                 className="w-full h-48 object-cover"
+                width={192}
+                height={192}
               />
               <div className="p-4">
                 <h3 className="font-bold text-xl">{doc.name}</h3>

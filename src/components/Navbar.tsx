@@ -1,5 +1,7 @@
 import Link from "next/link";
 import React from "react";
+import { UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 const Navbar: React.FC = () => {
   return (
@@ -12,34 +14,48 @@ const Navbar: React.FC = () => {
           <span className="ml-2 text-2xl font-bold text-blue-600">
             MediCare
           </span>
-        </div>
-
-        <div className="hidden md:flex items-center space-x-8">
-          {[
-            "Home",
-            "Doctors",
-            "Medicines",
-            "Hospitals",
-            "Services",
-            "About",
-          ].map((item) => (
-            <a
-              key={item}
-              href="#"
-              className="text-gray-600 hover:text-blue-600 transition"
+        </div>        <div className="hidden md:flex items-center space-x-8">
+          <Link href="/" className="text-gray-600 hover:text-blue-600 transition">
+            Home
+          </Link>
+          <Link href="/doctors" className="text-gray-600 hover:text-blue-600 transition">
+            Doctors
+          </Link>
+          <Link href="/medicines" className="text-gray-600 hover:text-blue-600 transition">
+            Medicines
+          </Link>
+          
+          <SignedIn>
+            <Link href="/appointments" className="text-gray-600 hover:text-blue-600 transition">
+              My Appointments
+            </Link>
+          </SignedIn>
+          
+          <Link href="/services" className="text-gray-600 hover:text-blue-600 transition">
+            Services
+          </Link>
+          <Link href="/about" className="text-gray-600 hover:text-blue-600 transition">
+            About
+          </Link>
+        </div><div className="flex items-center space-x-4">
+          <SignedOut>
+            <button className="hidden md:block px-4 py-2 text-blue-600 font-medium rounded-full border border-blue-600 hover:bg-blue-50 transition">
+              <Link href={"/sign-in"}>Login</Link>
+            </button>
+            <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition">
+              <Link href="/sign-up">Sign Up</Link>
+            </button>
+          </SignedOut>
+            <SignedIn>
+            <Link 
+              href="/dashboard" 
+              className="hidden md:block px-4 py-2 text-blue-600 font-medium rounded-full border border-blue-600 hover:bg-blue-50 transition mr-2"
             >
-              {item}
-            </a>
-          ))}
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="hidden md:block px-4 py-2 text-blue-600 font-medium rounded-full border border-blue-600 hover:bg-blue-50 transition">
-            <Link href={"/sign-in"}>Login</Link>
-          </button>
-          <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition">
-            <Link href="/sign-up">Sign Up</Link>
-          </button>
+              Dashboard
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          
           <button className="md:hidden text-gray-600">
             <i className="fas fa-bars text-2xl" />
           </button>

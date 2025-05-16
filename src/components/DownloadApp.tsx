@@ -28,12 +28,13 @@ const DownloadApp: React.FC = () => {
               </div>
             </button>
           </div>
-        </div>
-
+        </div>{" "}
         <div className="md:w-1/2 flex justify-center">
           <Image
             src="https://cdn-icons-png.flaticon.com/512/2965/2965300.png"
             alt="App Screenshot"
+            width={256}
+            height={256}
             className="app-screen w-64"
           />
         </div>
