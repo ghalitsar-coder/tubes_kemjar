@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       "images.clerk.dev",
       "randomuser.me",
       "cdn-icons-png.flaticon.com",
+      "images.unsplash.com"
     ],
   },
   eslint: {

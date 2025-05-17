@@ -1,0 +1,67 @@
+// components/Header.tsx
+"use client";
+
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React from "react";
+import { FaHeartbeat, FaBars } from "react-icons/fa";
+
+const Header: React.FC = () => {
+  const pathname = usePathname();
+
+  const isExactAuthPath = ["/sign-up", "/sign-in"].includes(pathname);
+  return (
+    <header className="bg-white shadow-md sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <Link href="/" className="flex items-center">
+          <FaHeartbeat className="text-primary text-3xl mr-2" />
+
+          <span className="text-2xl font-bold text-primary">
+            Vita<span className="text-secondary">Care</span>
+          </span>
+        </Link>
+
+        <nav className="hidden md:flex space-x-8">
+          {["home", "services", "doctors", "about", "contact"].map((id) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="text-gray-800 hover:text-primary font-medium capitalize"
+            >
+              {id}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center space-x-4">
+          {!isExactAuthPath && (
+            <>
+              <SignedOut>
+                <button className="hidden md:block px-4 py-1.5 text-primary font-medium rounded-md border border-primary hover:bg-blue-50 transition">
+                  <Link href={"/sign-in"}>Login</Link>
+                </button>
+                <button className="px-4 py-1.5 bg-primary text-white font-medium rounded-md hover:bg-primary hover:text-secondary transition">
+                  <Link href="/sign-up">Sign Up</Link>
+                </button>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </>
+          )}
+
+          <button className="md:hidden text-gray-600">
+            <i className="fas fa-bars text-2xl" />
+          </button>
+        </div>
+
+        <button className="md:hidden text-gray-800 text-2xl">
+          <FaBars />
+        </button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;

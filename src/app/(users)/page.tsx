@@ -8,11 +8,12 @@ import Doctors from "@/components/Doctors";
 import Testimonials from "@/components/Testimonials";
 import DownloadApp from "@/components/DownloadApp";
 import Footer from "@/components/Footer";
+import VitaCareHome from "@/components/landingpages/vita";
 
 export default function Home() {
   return (
     <>
-      <Head>
+      {/* <Head>
         <title>MediCare - Your Digital Healthcare Solution</title>
         <link
           rel="stylesheet"
@@ -28,7 +29,8 @@ export default function Home() {
         <Testimonials />
         <DownloadApp />
         <Footer />
-      </main>
+      </main> */}
+      <VitaCareHome />
     </>
   );
 }

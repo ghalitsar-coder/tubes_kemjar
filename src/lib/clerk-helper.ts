@@ -11,7 +11,8 @@ import {
 export function auth(options?: { request?: Request }) {
   try {
     if (options?.request) {
-      return clerkGetAuth({ request: options.request });
+      // Menggunakan req sebagai nama parameter sesuai dengan yang diterima oleh clerkGetAuth
+      return clerkGetAuth({ req: options.request });
     }
     // Fallback jika digunakan tanpa parameter
     return { userId: null };
