@@ -22,6 +22,12 @@ const prismaClientSingleton = () => {
             },
           }
         : undefined,
+        
+    // Konfigurasi reconnect otomatis ketika koneksi terputus
+    connection: {
+      reconnect: true,
+      maxConnections: 5,
+    },
   });
 };
 
