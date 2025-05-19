@@ -17,8 +17,10 @@ export async function GET(request: Request) {
         },
         { status: 400 }
       );
-    }    // Dapatkan role pengguna dari database dengan retry mechanism
-    const user = await withDatabaseRetry(() => 
+    }
+
+    // Dapatkan role pengguna dari database dengan retry mechanism
+    const user = await withDatabaseRetry(() =>
       prisma.user.findUnique({
         where: { clerkId: userId },
         select: { role: true },
@@ -37,20 +39,17 @@ export async function GET(request: Request) {
     return NextResponse.json({
       role: user.role,
       authenticated: true,
-    });  } catch (error) {
+    });
+  } catch (error) {
     console.error("Error fetching user role:", error);
-    
+
     // Selalu return PATIENT role pada error untuk keamanan
-    return NextResponse.json({
-      role: "PATIENT", 
-      authenticated: false,
-      error: "Database connection error, defaulting to PATIENT role for security"
-    }, { status: 500 });
     return NextResponse.json(
       {
-        role: "PATIENT", // Default to lowest access level for security
+        role: "PATIENT",
         authenticated: false,
-        error: "Internal server error",
+        error:
+          "Database connection error, defaulting to PATIENT role for security",
       },
       { status: 500 }
     );

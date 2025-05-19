@@ -17,20 +17,41 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Sekarang kita bisa mengakses userId dari hasil await
   const userId = authData.userId;
-
   // Route yang sedang diakses
-  const pathname = req.nextUrl.pathname;
-
-  // Skip role check for public routes and API routes
-  if (pathname.startsWith("/api/") || !isDashboardRoute(req)) {
+  const pathname = req.nextUrl.pathname; // Skip role check for API routes, static files, and auth pages
+  if (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/sign-out") ||
+    pathname === "/favicon.ico"
+  ) {
     return NextResponse.next();
   }
-
-  // Jika tidak ada user yang terautentikasi, redirect ke login
+  // Untuk pengguna yang belum login
   if (!userId) {
-    const signInUrl = new URL("/sign-in", req.url);
-    signInUrl.searchParams.set("redirect_url", pathname);
-    return NextResponse.redirect(signInUrl);
+    // Jika mencoba mengakses rute terproteksi (admin atau doctor), redirect ke login
+    if (
+      isAdminRoute(req) ||
+      isDoctorRoute(req) ||
+      pathname.startsWith("/dashboard")
+    ) {
+      console.log(
+        "[Middleware] Unauthenticated user trying to access protected route:",
+        pathname
+      );
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("redirect_url", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Jika mengakses rute publik, izinkan
+    console.log(
+      "[Middleware] Allowing unauthenticated user to access public route:",
+      pathname
+    );
+    return NextResponse.next();
   }
 
   try {
@@ -73,34 +94,66 @@ export default clerkMiddleware(async (auth, req) => {
         );
         // Continue with PATIENT role for security (already set as default)
       }
-    }
-
-    // For any dashboard route, restrict PATIENT access
-    if (isDashboardRoute(req) && userRole === "PATIENT") {
-      console.log("[Middleware] Restricting PATIENT from dashboard");
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    // Admin routes are only for ADMIN
-    if (isAdminRoute(req) && userRole !== "ADMIN") {
-      console.log("[Middleware] Non-ADMIN accessing admin route, redirecting");
-      if (userRole === "DOCTOR") {
-        // Redirect DOCTOR to their own dashboard
-        return NextResponse.redirect(new URL("/dashboard/doctors", req.url));
+    } // Restrict PATIENT to non-dashboard access
+    if (userRole === "PATIENT") {
+      if (isDashboardRoute(req)) {
+        console.log("[Middleware] Restricting PATIENT from dashboard");
+        return NextResponse.redirect(new URL("/", req.url));
       }
-      return NextResponse.redirect(new URL("/", req.url));
+      // Patient can access public routes
+      return NextResponse.next();
     }
 
-    // Doctor routes are only for DOCTOR
-    if (isDoctorRoute(req) && userRole !== "DOCTOR") {
-      console.log(
-        "[Middleware] Non-DOCTOR accessing doctor route, redirecting"
-      );
-      if (userRole === "ADMIN") {
-        // Redirect ADMIN to admin dashboard
+    // For ADMIN users
+    if (userRole === "ADMIN") {
+      // If admin trying to access doctor routes, redirect to admin dashboard
+      if (isDoctorRoute(req)) {
+        console.log(
+          "[Middleware] Admin accessing doctor route, redirecting to admin dashboard"
+        );
         return NextResponse.redirect(new URL("/dashboard/admin", req.url));
       }
-      return NextResponse.redirect(new URL("/", req.url));
+
+      // If admin accessing any non-admin and non-API route, redirect to admin dashboard
+      if (
+        !isAdminRoute(req) &&
+        !pathname.startsWith("/api/") &&
+        !pathname.startsWith("/_next/")
+      ) {
+        console.log(
+          "[Middleware] Admin accessing non-admin route, redirecting to admin dashboard"
+        );
+        return NextResponse.redirect(new URL("/dashboard/admin", req.url));
+      }
+
+      // Admin can access admin routes
+      return NextResponse.next();
+    }
+
+    // For DOCTOR users
+    if (userRole === "DOCTOR") {
+      // If doctor trying to access admin routes, redirect to doctor dashboard
+      if (isAdminRoute(req)) {
+        console.log(
+          "[Middleware] Doctor accessing admin route, redirecting to doctor dashboard"
+        );
+        return NextResponse.redirect(new URL("/dashboard/doctors", req.url));
+      }
+
+      // If doctor accessing any non-doctor and non-API route, redirect to doctor dashboard
+      if (
+        !isDoctorRoute(req) &&
+        !pathname.startsWith("/api/") &&
+        !pathname.startsWith("/_next/")
+      ) {
+        console.log(
+          "[Middleware] Doctor accessing non-doctor route, redirecting to doctor dashboard"
+        );
+        return NextResponse.redirect(new URL("/dashboard/doctors", req.url));
+      }
+
+      // Doctor can access doctor routes
+      return NextResponse.next();
     }
   } catch (error) {
     console.error("[Middleware] Error in role check:", error);
@@ -114,11 +167,9 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
+    // Match all routes except Next.js internals and static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
-    // Run for dashboard routes specifically
-    "/dashboard(.*)",
   ],
 };
