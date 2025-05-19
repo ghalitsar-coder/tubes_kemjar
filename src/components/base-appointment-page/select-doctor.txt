@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book an Appointment | MedCare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover:not(.disabled-day) {
+            transform: scale(1.05);
+        }
+        
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot:hover {
+            transform: scale(1.02);
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Animation for steps */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Custom scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-indigo-600 font-bold text-xl">MedCare</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Home</a>
+                        <a href="#" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Doctors</a>
+                        <a href="#" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Appointments</a>
+                        <a href="#" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Medical Records</a>
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <button type="button" class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <span class="sr-only">View notifications</span>
+                        <i class="fas fa-bell h-6 w-6"></i>
+                    </button>
+                    <div class="ml-3 relative">
+                        <div class="flex items-center">
+                            <div class="text-sm mr-2">
+                                <div class="font-medium text-gray-700">John Doe</div>
+                                <div class="text-gray-500">Patient</div>
+                            </div>
+                            <button type="button" class="bg-gray-800 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                                <span class="sr-only">Open user menu</span>
+                                <img class="h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <!-- Mobile menu button -->
+                    <button type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars h-6 w-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Appointment Booking Container -->
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <!-- Booking Steps Header -->
+            <div class="border-b border-gray-200">
+                <div class="px-6 py-5">
+                    <h2 class="text-2xl font-semibold text-gray-800">Book a Doctor's Appointment</h2>
+                    <p class="mt-1 text-sm text-gray-500">Schedule your consultation with our specialists</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <span class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium">1</span>
+                        <span class="font-medium text-indigo-600">Select Doctor</span>
+                    </div>
+                    <div class="h-0.5 bg-gray-300 flex-grow mx-2 md:mx-4 lg:mx-6"></div>
+                    <div class="flex items-center space-x-2">
+                        <span class="h-8 w-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 font-medium">2</span>
+                        <span class="font-medium text-gray-500">Select Date & Time</span>
+                    </div>
+                    <div class="h-0.5 bg-gray-300 flex-grow mx-2 md:mx-4 lg:mx-6"></div>
+                    <div class="flex items-center space-x-2">
+                        <span class="h-8 w-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 font-medium">3</span>
+                        <span class="font-medium text-gray-500">Confirm Details</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <div class="px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
+                <!-- Doctor Selection -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-medium text-gray-900">Available Doctors</h3>
+                        <div class="relative">
+                            <select id="specialization" class="block appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option>All Specializations</option>
+                                <option>Cardiology</option>
+                                <option>Dermatology</option>
+                                <option>Neurology</option>
+                                <option>Pediatrics</option>
+                                <option>Orthopedics</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Doctor Cards -->
+                    <div class="space-y-4 custom-scroll overflow-y-auto" style="max-height: 500px;">
+                        <!-- Doctor 1 -->
+                        <div class="doctor-card bg-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80" alt="Dr. Sarah Johnson" class="w-20 h-20 rounded-full object-cover">
+                                <div class="ml-4 flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-lg font-semibold text-gray-900">Dr. Sarah Johnson</h4>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Available
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-indigo-600">Cardiologist</p>
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-graduation-cap mr-1"></i>
+                                        <span>15 years experience</span>
+                                    </div>
+                                    <div class="mt-1 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                        <span>4.8 (128 reviews)</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="text-indigo-600 font-medium">$150</span>
+                                        <span class="text-sm text-gray-500 ml-1">consultation fee</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-between items-center">
+                                <button class="select-doctor-btn inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    Select Doctor
+                                </button>
+                                <button class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Doctor 2 -->
+                        <div class="doctor-card bg-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80" alt="Dr. Michael Chen" class="w-20 h-20 rounded-full object-cover">
+                                <div class="ml-4 flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-lg font-semibold text-gray-900">Dr. Michael Chen</h4>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Few slots left
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-indigo-600">Neurologist</p>
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-graduation-cap mr-1"></i>
+                                        <span>12 years experience</span>
+                                    </div>
+                                    <div class="mt-1 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                        <span>4.9 (95 reviews)</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="text-indigo-600 font-medium">$180</span>
+                                        <span class="text-sm text-gray-500 ml-1">consultation fee</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-between items-center">
+                                <button class="select-doctor-btn inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    Select Doctor
+                                </button>
+                                <button class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Doctor 3 -->
+                        <div class="doctor-card bg-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80" alt="Dr. Emily Wilson" class="w-20 h-20 rounded-full object-cover">
+                                <div class="ml-4 flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-lg font-semibold text-gray-900">Dr. Emily Wilson</h4>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Available
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-indigo-600">Dermatologist</p>
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-graduation-cap mr-1"></i>
+                                        <span>8 years experience</span>
+                                    </div>
+                                    <div class="mt-1 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                        <span>4.7 (203 reviews)</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="text-indigo-600 font-medium">$120</span>
+                                        <span class="text-sm text-gray-500 ml-1">consultation fee</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-between items-center">
+                                <button class="select-doctor-btn inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    Select Doctor
+                                </button>
+                                <button class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Selected Doctor Summary -->
+                <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <div id="no-doctor-selected" class="text-center py-8">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100">
+                            <i class="fas fa-user-md text-gray-400"></i>
+                        </div>
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">No doctor selected</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Choose a doctor from the list to view details and schedule an appointment.
+                        </p>
+                    </div>
+                    
+                    <div id="doctor-selected-card" class="hidden">
+                        <div class="flex items-center">
+                            <img id="selected-doctor-image" class="w-16 h-16 rounded-full object-cover" src="" alt="">
+                            <div class="ml-4">
+                                <h3 id="selected-doctor-name" class="text-lg font-medium text-gray-900"></h3>
+                                <p id="selected-doctor-specialty" class="text-sm text-indigo-600"></p>
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-gray-200 pt-4">
+                            <h4 class="text-sm font-medium text-gray-500">CONSULTATION FEE</h4>
+                            <p id="selected-doctor-fee" class="mt-1 text-2xl font-semibold text-gray-900"></p>
+                            
+                            <h4 class="mt-4 text-sm font-medium text-gray-500">AVAILABILITY</h4>
+                            <p id="selected-doctor-availability" class="mt-1 text-sm text-gray-500"></p>
+                            
+                            <div class="mt-6">
+                                <button id="proceed-to-schedule" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                    Proceed to Schedule
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date & Time Selection Modal -->
+    <div id="datetime-modal" class="hidden fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full sm:p-6">
+                <div class="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
+                    <button id="close-datetime-modal" type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <span class="sr-only">Close</span>
+                        <i class="fas fa-times h-6 w-6"></i>
+                    </button>
+                </div>
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-calendar-alt text-indigo-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            Schedule an Appointment
+                        </h3>
+                        <div id="selected-doctor-info-modal" class="mt-1 text-sm text-gray-500"></div>
+                    </div>
+                </div>
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Calendar Section -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-sm font-medium text-gray-500">SELECT DATE</h4>
+                            <div class="flex space-x-2">
+                                <button id="prev-month" class="p-1 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button id="next-month" class="p-1 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="current-month-year" class="text-lg font-medium text-center text-gray-900 mb-4">June 2023</div>
+                        <div id="calendar" class="grid grid-cols-7 gap-1">
+                            <!-- Calendar days will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Time Slots Section -->
+                    <div>
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-500">AVAILABLE TIME SLOTS</h4>
+                            <p id="selected-date-display" class="mt-1 text-gray-900">Select a date from the calendar</p>
+                        </div>
+                        <div id="time-slots-container" class="space-y-2">
+                            <p class="text-center text-gray-500 py-4">No date selected yet</p>
+                        </div>
+                        
+                        <!-- Appointment Type -->
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-500">APPOINTMENT TYPE</h4>
+                            <div class="mt-2 space-y-2">
+                                <div class="flex items-center">
+                                    <input id="in-person" name="appointment-type" type="radio" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <label for="in-person" class="ml-3 block text-sm font-medium text-gray-700">
+                                        In-Person
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="video-call" name="appointment-type" type="radio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <label for="video-call" class="ml-3 block text-sm font-medium text-gray-700">
+                                        Video Call
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="phone-call" name="appointment-type" type="radio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <label for="phone-call" class="ml-3 block text-sm font-medium text-gray-700">
+                                        Phone Call
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <div>
+                        <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Appointment</label>
+                        <div class="mt-1">
+                            <textarea id="reason" name="reason" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Briefly describe the reason for your visit"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                    <button id="confirm-appointment-btn" type="button" disabled class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        Confirm Appointment
+                    </button>
+                    <button id="cancel-appointment-btn" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 overflow-y-auto z-50" aria-labelledby="confirmation-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-5">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmation-title">
+                            Appointment Confirmed!
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Your appointment with <span id="confirmed-doctor-name" class="font-medium"></span> is scheduled for <span id="confirmed-date-time" class="font-medium"></span>.
+                            </p>
+                        </div>
+                        <div class="mt-4 bg-blue-50 p-4 rounded-md">
+                            <h4 class="text-sm font-medium text-blue-800">APPOINTMENT DETAILS</h4>
+                            <div class="mt-2 grid grid-cols-3 gap-4 text-sm text-blue-700">
+                                <div class="col-span-3">
+                                    <span class="font-medium">Doctor:</span> <span id="confirmed-doctor-specialty"></span>
+                                </div>
+                                <div class="col-span-3">
+                                    <span class="font-medium">Type:</span> <span id="confirmed-appointment-type"></span>
+                                </div>
+                                <div class="col-span-3">
+                                    <span class="font-medium">Reason:</span> <span id="confirmed-reason"></span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Date:</span> <span id="confirmed-date"></span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Time:</span> <span id="confirmed-time"></span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Fee:</span> <span id="confirmed-fee"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-6">
+                    <button id="go-to-appointments-btn" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                        View My Appointments
+                    </button>
+                    <button id="another-appointment-btn" type="button" class="mt-3 inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                        Book Another Appointment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - in a real app this would come from your API
+        const doctors = [
+            {
+                id: 1,
+                name: 'Dr. Sarah Johnson',
+                specialty: 'Cardiologist',
+                image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80',
+                experience: 15,
+                rating: 4.8,
+                reviews: 128,
+                fee: 150,
+                availableDays: ['Monday', 'Wednesday', 'Friday'],
+                timeSlots: {
+                    '2023-06-12': ['09:00 AM', '10:30 AM', '02:00 PM'],
+                    '2023-06-14': ['08:30 AM', '11:00 AM', '03:30 PM'],
+                    '2023-06-16': ['10:00 AM', '01:30 PM', '04:00 PM']
+                }
+            },
+            {
+                id: 2,
+                name: 'Dr. Michael Chen',
+                specialty: 'Neurologist',
+                image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80',
+                experience: 12,
+                rating: 4.9,
+                reviews: 95,
+                fee: 180,
+                availableDays: ['Tuesday', 'Thursday'],
+                timeSlots: {
+                    '2023-06-13': ['08:00 AM', '10:00 AM', '01:00 PM'],
+                    '2023-06-15': ['09:30 AM', '02:30 PM']
+                }
+            },
+            {
+                id: 3,
+                name: 'Dr. Emily Wilson',
+                specialty: 'Dermatologist',
+                image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2.5&w=160&h=160&q=80',
+                experience: 8,
+                rating: 4.7,
+                reviews: 203,
+                fee: 120,
+                availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                timeSlots: {
+                    '2023-06-12': ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
+                    '2023-06-13': ['08:30 AM', '01:30 PM', '03:30 PM'],
+                    '2023-06-14': ['10:00 AM', '02:30 PM'],
+                    '2023-06-15': ['09:00 AM', '11:00 AM', '03:00 PM'],
+                    '2023-06-16': ['08:30 AM', '01:00 PM', '04:30 PM']
+                }
+            }
+        ];
+
+        // Current state
+        let currentState = {
+            selectedDoctor: null,
+            selectedDate: null,
+            selectedTime: null,
+            appointmentType: 'in-person'
+        };
+
+        // DOM elements
+        const selectDoctorButtons = document.querySelectorAll('.select-doctor-btn');
+        const noDoctorSelectedEl = document.getElementById('no-doctor-selected');
+        const doctorSelectedCardEl = document.getElementById('doctor-selected-card');
+        const proceedToScheduleBtn = document.getElementById('proceed-to-schedule');
+        const datetimeModal = document.getElementById('datetime-modal');
+        const closeDatetimeModalBtn = document.getElementById('close-datetime-modal');
+        const cancelAppointmentBtn = document.getElementById('cancel-appointment-btn');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const currentMonthYearEl = document.getElementById('current-month-year');
+        const calendarEl = document.getElementById('calendar');
+        const selectedDateDisplayEl = document.getElementById('selected-date-display');
+        const timeSlotsContainerEl = document.getElementById('time-slots-container');
+        const appointmentTypeRadios = document.getElementsByName('appointment-type');
+        const reasonTextarea = document.getElementById('reason');
+        const confirmAppointmentBtn = document.getElementById('confirm-appointment-btn');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const goToAppointmentsBtn = document.getElementById('go-to-appointments-btn');
+        const anotherAppointmentBtn = document.getElementById('another-appointment-btn');
+        const selectedDoctorInfoModalEl = document.getElementById('selected-doctor-info-modal');
+
+        // Initialize calendar
+        let currentDate = new Date();
+        renderCalendar(currentDate);
+        renderDayNames();
+
+        // Event listeners
+        selectDoctorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const doctorCard = button.closest('.doctor-card');
+                const doctorName = doctorCard.querySelector('h4').textContent;
+                const doctorImage = doctorCard.querySelector('img').src;
+                const doctorSpecialty = doctorCard.querySelector('p.text-indigo-600').textContent;
+                const doctorFee = doctorCard.querySelector('.text-indigo-600.font-medium').textContent;
+                
+                // Update state
+                currentState.selectedDoctor = doctors.find(doc => doc.name === doctorName);
+                
+                // Update UI
+                noDoctorSelectedEl.classList.add('hidden');
+                doctorSelectedCardEl.classList.remove('hidden');
+                document.getElementById('selected-doctor-image').src = doctorImage;
+                document.getElementById('selected-doctor-name').textContent = doctorName;
+                document.getElementById('selected-doctor-specialty').textContent = doctorSpecialty;
+                document.getElementById('selected-doctor-fee').textContent = `$${currentState.selectedDoctor.fee}`;
+                document.getElementById('selected-doctor-availability').textContent = `Available on ${currentState.selectedDoctor.availableDays.join(', ')}`;
+                
+                // Enable proceed button
+                proceedToScheduleBtn.disabled = false;
+            });
+        });
+
+        proceedToScheduleBtn.addEventListener('click', () => {
+            // Update modal with selected doctor info
+            const doctor = currentState.selectedDoctor;
+            selectedDoctorInfoModalEl.innerHTML = `
+                <div class="flex items-center">
+                    <img src="${doctor.image}" class="w-8 h-8 rounded-full object-cover mr-2" alt="${doctor.name}">
+                    <div>
+                        <p class="font-medium">${doctor.name}</p>
+                        <p class="text-indigo-600">${doctor.specialty}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Show modal
+            datetimeModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        });
+
+        closeDatetimeModalBtn.addEventListener('click', () => {
+            datetimeModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
+
+        cancelAppointmentBtn.addEventListener('click', () => {
+            datetimeModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar(currentDate);
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar(currentDate);
+        });
+
+        appointmentTypeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                currentState.appointmentType = radio.id;
+            });
+        });
+
+        confirmAppointmentBtn.addEventListener('click', () => {
+            // Show confirmation modal
+            datetimeModal.classList.add('hidden');
+            confirmationModal.classList.remove('hidden');
+            
+            // Update confirmation details
+            const doctor = currentState.selectedDoctor;
+            const selectedDate = new Date(currentState.selectedDate);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDate = selectedDate.toLocaleDateString('en-US', options);
+            const formattedTime = currentState.selectedTime;
+            
+            document.getElementById('confirmed-doctor-name').textContent = doctor.name;
+            document.getElementById('confirmed-doctor-specialty').textContent = doctor.specialty;
+            document.getElementById('confirmed-appointment-type').textContent = 
+                currentState.appointmentType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            document.getElementById('confirmed-reason').textContent = reasonTextarea.value || 'Not specified';
+            document.getElementById('confirmed-date-time').textContent = `${formattedDate} at ${formattedTime}`;
+            document.getElementById('confirmed-date').textContent = formattedDate;
+            document.getElementById('confirmed-time').textContent = formattedTime;
+            document.getElementById('confirmed-fee').textContent = `$${doctor.fee}`;
+        });
+
+        goToAppointmentsBtn.addEventListener('click', () => {
+            // In a real app, this would navigate to the appointments page
+            confirmationModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            alert('Navigating to appointments page...');
+        });
+
+        anotherAppointmentBtn.addEventListener('click', () => {
+            // Reset state and UI for another booking
+            confirmationModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            currentState.selectedDate = null;
+            currentState.selectedTime = null;
+            currentState.appointmentType = 'in-person';
+            reasonTextarea.value = '';
+            renderCalendar(currentDate);
+        });
+
+        // Functions
+        function renderCalendar(date) {
+            const month = date.getMonth();
+            const year = date.getFullYear();
+            
+            // Update month/year display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            currentMonthYearEl.textContent = `${monthNames[month]} ${year}`;
+            
+            // Get first day of month
+            const firstDay = new Date(year, month, 1);
+            const startingDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            
+            // Get last day of month
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // Clear previous days
+            calendarEl.innerHTML = '';
+            
+            // Add empty cells for days before the 1st of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'py-2';
+                calendarEl.appendChild(emptyCell);
+            }
+            
+            // Add day cells for the month
+            const today = new Date();
+            const currentDoctor = currentState.selectedDoctor;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDate = new Date(year, month, day);
+                const weekday = dayDate.getDay();
+                const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][weekday];
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Check if doctor is available on this day
+                const isAvailable = currentDoctor ? currentDoctor.availableDays.includes(dayName) : false;
+                const isPast = dayDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = `py-2 text-center calendar-day rounded-md ${isAvailable && !isPast ? 'cursor-pointer hover:bg-indigo-50' : 'disabled-day cursor-not-allowed opacity-50'}`;
+                
+                // Highlight today
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayCell.classList.add('border', 'border-indigo-200', 'bg-indigo-50');
+                }
+                
+                // Highlight selected date
+                if (currentState.selectedDate === dateString) {
+                    dayCell.classList.add('bg-indigo-100', 'text-indigo-700');
+                }
+                
+                dayCell.textContent = day;
+                
+                if (isAvailable && !isPast) {
+                    dayCell.addEventListener('click', () => handleDateClick(dateString, day, month, year, dayName));
+                }
+                
+                calendarEl.appendChild(dayCell);
+            }
+        }
+
+        function renderDayNames() {
+            const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            const headerRow = document.createElement('div');
+            headerRow.className = 'grid grid-cols-7 gap-1 mb-2';
+            
+            dayNames.forEach(day => {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'text-center text-xs font-medium text-gray-500';
+                dayCell.textContent = day;
+                headerRow.appendChild(dayCell);
+            });
+            
+            calendarEl.parentNode.insertBefore(headerRow, calendarEl);
+        }
+
+        function handleDateClick(dateString, day, month, year, dayName) {
+            currentState.selectedDate = dateString;
+            renderCalendar(currentDate);
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            selectedDateDisplayEl.textContent = `${dayName}, ${monthNames[month]} ${day}, ${year}`;
+            
+            // Get time slots for this doctor and date
+            const timeSlots = currentState.selectedDoctor.timeSlots[dateString] || [];
+            
+            // Render time slots
+            timeSlotsContainerEl.innerHTML = '';
+            
+            if (timeSlots.length === 0) {
+                timeSlotsContainerEl.innerHTML = `
+                    <p class="text-center text-gray-500 py-4">
+                        No available slots for this date. Please select another date.
+                    </p>
+                `;
+                confirmAppointmentBtn.disabled = true;
+                currentState.selectedTime = null;
+                return;
+            }
+            
+            timeSlots.forEach(time => {
+                const timeSlotEl = document.createElement('button');
+                timeSlotEl.className = `w-full py-2 px-4 bg-white border rounded-md time-slot ${currentState.selectedTime === time ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+                timeSlotEl.textContent = time;
+                timeSlotEl.addEventListener('click', () => {
+                    document.querySelectorAll('.time-slot').forEach(el => {
+                        el.classList.remove('border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+                        el.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                    });
+                    timeSlotEl.classList.add('border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+                    timeSlotEl.classList.remove('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                    
+                    currentState.selectedTime = time;
+                    confirmAppointmentBtn.disabled = false;
+                });
+                timeSlotsContainerEl.appendChild(timeSlotEl);
+            });
+            
+            // If previously selected time is still available, select it
+            if (currentState.selectedTime && timeSlots.includes(currentState.selectedTime)) {
+                const index = timeSlots.indexOf(currentState.selectedTime);
+                timeSlotsContainerEl.children[index].click();
+            } else {
+                confirmAppointmentBtn.disabled = true;
+                currentState.selectedTime = null;
+            }
+        }
+    </script>
+</body>
+</html>

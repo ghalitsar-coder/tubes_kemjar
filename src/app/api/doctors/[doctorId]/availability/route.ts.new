@@ -1,0 +1,128 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+import { parseISO, addMinutes, format } from "date-fns";
+
+export async function GET(
+  request: Request,
+  context: { params: { doctorId: string } }
+) {
+  try {
+    const doctorId = context.params.doctorId;
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get("date");
+    const dayOfWeek = searchParams.get("dayOfWeek");
+
+    if (!date || !dayOfWeek) {
+      return NextResponse.json(
+        { error: "Date and dayOfWeek parameters are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate doctorId is a number
+    if (isNaN(parseInt(doctorId))) {
+      return NextResponse.json(
+        { error: "Invalid doctor ID" },
+        { status: 400 }
+      );
+    }
+
+    // Check if doctor exists
+    const doctor = await prisma.doctor.findUnique({
+      where: {
+        id: parseInt(doctorId)
+      }
+    });
+
+    if (!doctor) {
+      return NextResponse.json(
+        { error: "Doctor not found" },
+        { status: 404 }
+      );
+    }
+
+    // Find doctor's schedule for the given day
+    const doctorSchedule = await prisma.schedule.findFirst({
+      where: {
+        doctorId: parseInt(doctorId),
+        dayOfWeek: parseInt(dayOfWeek),
+        isAvailable: true,
+      },
+    });
+
+    if (!doctorSchedule) {
+      return NextResponse.json({ availableTimes: [] }, { status: 200 });
+    }
+
+    // Get existing appointments for this doctor on this date
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        doctorId: parseInt(doctorId),
+        date: {
+          gte: new Date(`${date}T00:00:00`),
+          lt: new Date(`${date}T23:59:59`),
+        },
+        status: {
+          notIn: ["CANCELLED"],
+        },
+      },
+    });
+
+    // Extract time from schedule
+    const scheduleStartTime = new Date(doctorSchedule.startTime);
+    const scheduleEndTime = new Date(doctorSchedule.endTime);
+
+    const startHour = scheduleStartTime.getUTCHours();
+    const startMinute = scheduleStartTime.getUTCMinutes();
+    const endHour = scheduleEndTime.getUTCHours();
+    const endMinute = scheduleEndTime.getUTCMinutes();
+
+    // Generate time slots (30-minute intervals)
+    const slots = [];
+    const slotDuration = 30; // minutes
+
+    let currentTime = new Date(`${date}T00:00:00`);
+    currentTime.setHours(startHour, startMinute);
+
+    const endTime = new Date(`${date}T00:00:00`);
+    endTime.setHours(endHour, endMinute);
+
+    while (currentTime < endTime) {
+      const slotStart = new Date(currentTime);
+      const slotEnd = addMinutes(currentTime, slotDuration);
+
+      if (slotEnd <= endTime) {
+        // Check if this slot conflicts with any existing appointments
+        const isAvailable = !appointments.some((appointment) => {
+          const appointmentStart = new Date(appointment.startTime);
+          const appointmentEnd = new Date(appointment.endTime);
+
+          return (
+            (slotStart >= appointmentStart && slotStart < appointmentEnd) ||
+            (slotEnd > appointmentStart && slotEnd <= appointmentEnd) ||
+            (slotStart <= appointmentStart && slotEnd >= appointmentEnd)
+          );
+        });
+
+        slots.push({
+          start: format(slotStart, "yyyy-MM-dd'T'HH:mm:ss"),
+          end: format(slotEnd, "yyyy-MM-dd'T'HH:mm:ss"),
+          isAvailable,
+        });
+      }
+
+      currentTime = slotEnd;
+    }
+
+    return NextResponse.json({
+      availableTimes: slots.filter((slot) => slot.isAvailable),
+    });
+  } catch (error) {
+    console.error("Error fetching doctor availability:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch doctor availability" },
+      { status: 500 }
+    );
+  }
+}

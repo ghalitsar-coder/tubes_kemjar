@@ -1,0 +1,262 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { format, addDays, isSameDay, parseISO, startOfDay } from "date-fns";
+
+interface Doctor {
+  id: number;
+  user: {
+    id: number;
+    name: string;
+  };
+  specialization: string;
+}
+
+interface TimeSlot {
+  start: string;
+  end: string;
+  isAvailable: boolean;
+}
+
+interface DateTimeSelectionProps {
+  doctor: Doctor;
+  onSelectDateTime: (date: string, startTime: string, endTime: string) => void;
+  onBack: () => void;
+}
+
+export default function DateTimeSelection({
+  doctor,
+  onSelectDateTime,
+  onBack,
+}: DateTimeSelectionProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [dateRange, setDateRange] = useState<Date[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize date range (next 2 weeks)
+  useEffect(() => {
+    const today = new Date();
+    const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
+    setDateRange(days);
+
+    // Auto-select today
+    setSelectedDate(today);
+  }, []);
+
+  // Fetch available time slots when date changes
+  useEffect(() => {
+    if (!selectedDate || !doctor) return;
+
+    const fetchAvailableSlots = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+        const response = await fetch(
+          `/api/doctors/${doctor.id}/availability?date=${formattedDate}&dayOfWeek=${dayOfWeek}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch available time slots");
+        }
+
+        const data = await response.json();
+        setAvailableSlots(data.availableTimes || []);
+      } catch (err) {
+        console.error("Error fetching available times:", err);
+        setError("Failed to load available time slots. Please try again.");
+        setAvailableSlots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAvailableSlots();
+  }, [selectedDate, doctor]);
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlot(null);
+  };
+
+  const handleSlotSelect = (slot: TimeSlot) => {
+    setSelectedSlot(slot);
+  };
+
+  const handleContinue = () => {
+    if (!selectedDate || !selectedSlot) return;
+
+    const formattedDate = format(selectedDate, "yyyy-MM-dd");
+    const startTime = selectedSlot.start.split("T")[1].substring(0, 5);
+    const endTime = selectedSlot.end.split("T")[1].substring(0, 5);
+
+    onSelectDateTime(formattedDate, startTime, endTime);
+  };
+
+  const formatTime = (timeString: string) => {
+    const time = timeString.split("T")[1]?.substring(0, 5) || timeString;
+    return new Date(`2023-01-01T${time}`).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Select Date & Time</h2>
+        <button
+          onClick={onBack}
+          className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center"
+        >
+          <svg
+            className="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Back to Doctors
+        </button>
+      </div>
+
+      <div className="border-b pb-4 mb-6">
+        <div className="flex items-center mb-4">
+          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mr-4">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-bold text-lg">Dr. {doctor?.user?.name}</h3>
+            <p className="text-gray-600">{doctor.specialization}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar */}
+      <div className="mb-8">
+        <h3 className="font-medium text-lg mb-3">Select Date</h3>
+        <div className="grid grid-cols-7 gap-1">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            <div
+              key={day}
+              className="text-center font-medium text-gray-500 text-sm py-1"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {dateRange.map((date) => {
+            const isSelected = selectedDate && isSameDay(date, selectedDate);
+            const isToday = isSameDay(date, new Date());
+
+            return (
+              <button
+                key={date.toString()}
+                onClick={() => handleDateSelect(date)}
+                className={`
+                  calendar-day p-2 text-center rounded-lg transition-all
+                  ${
+                    isSelected
+                      ? "bg-indigo-600 text-white"
+                      : "hover:bg-indigo-50"
+                  }
+                  ${isToday && !isSelected ? "border border-indigo-500" : ""}
+                `}
+              >
+                <div className="text-xs">{format(date, "EEE")}</div>
+                <div className="font-bold">{format(date, "d")}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Time slots */}
+      <div>
+        <h3 className="font-medium text-lg mb-3">Select Time</h3>
+
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && availableSlots.length === 0 && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+            <p className="text-sm text-yellow-700">
+              No available time slots for this date. Please select another date.
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {availableSlots.map((slot, index) => (
+            <button
+              key={`${slot.start}-${index}`}
+              onClick={() => handleSlotSelect(slot)}
+              disabled={!slot.isAvailable}
+              className={`
+                time-slot p-3 text-center rounded-md border transition-all
+                ${
+                  selectedSlot === slot
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : ""
+                }
+                ${
+                  !slot.isAvailable
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "hover:border-indigo-500"
+                }
+              `}
+            >
+              {formatTime(slot.start)} - {formatTime(slot.end)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={handleContinue}
+          disabled={!selectedDate || !selectedSlot}
+          className="bg-indigo-600 text-white px-6 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
