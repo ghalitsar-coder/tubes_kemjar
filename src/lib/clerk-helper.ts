@@ -15,7 +15,8 @@ export function auth(options?: { request?: Request }) {
       return clerkGetAuth({ req: options.request });
     }
     // Fallback jika digunakan tanpa parameter
-    return { userId: null };
+    // Menggunakan clerkGetAuth tanpa parameter untuk konsistensi
+    return clerkGetAuth();
   } catch (e) {
     console.error("Clerk auth error:", e);
     return { userId: null };

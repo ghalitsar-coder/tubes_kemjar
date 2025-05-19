@@ -22,14 +22,16 @@ const HeroSection: React.FC = () => {
             We provide exceptional healthcare services with compassion and
             cutting-edge technology to ensure your well-being at every stage of
             life.
-          </p>
+          </p>{" "}
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <button className="bg-primary hover:bg-green-700 text-white px-8 py-3 rounded-full font-medium transition duration-300">
-              Our Services
-            </button>
-            <Link href="/dashboard">
+            <Link href="/dashboard/admin">
+              <button className="bg-primary hover:bg-green-700 text-white px-8 py-3 rounded-full font-medium transition duration-300">
+                Admin Area (Debug)
+              </button>
+            </Link>
+            <Link href="/dashboard/doctors">
               <button className="bg-secondary hover:bg-yellow-600 text-gray-800 px-8 py-3 rounded-full font-medium transition duration-300">
-                Meet Our Doctors
+                Doctor Area (Debug)
               </button>
             </Link>
           </div>

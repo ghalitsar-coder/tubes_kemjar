@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { neon } from "@neondatabase/serverless";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
