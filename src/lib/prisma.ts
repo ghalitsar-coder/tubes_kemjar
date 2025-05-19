@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { neon } from "@neondatabase/serverless";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -22,12 +21,6 @@ const prismaClientSingleton = () => {
             },
           }
         : undefined,
-        
-    // Konfigurasi reconnect otomatis ketika koneksi terputus
-    connection: {
-      reconnect: true,
-      maxConnections: 5,
-    },
   });
 };
 
