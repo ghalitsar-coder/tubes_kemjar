@@ -59,7 +59,7 @@ export default function AppointmentConfirmation({
 
     setIsSubmitting(true);
     setError(null);
-
+    console.log('NOTES ',notes)
     try {
       const appointmentData = {
         doctorId: doctor.id,
@@ -71,19 +71,23 @@ export default function AppointmentConfirmation({
         type: appointmentType,
       };
 
-      console.log("Submitting appointment data:", appointmentData);
-
-      const response = await fetch("/api/appointments", {
+      console.log("Submitting appointment data:", appointmentData);    
+        const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(appointmentData),
-      });
-
-      const responseData = await response.json();
+      });      const responseData = await response.json();
 
       if (!response.ok) {
+        // console.error("Appointment booking error:", responseData);
+        // Use a more user-friendly error message for common scenarios
+        if (responseData.error === "Time slot is already booked") {
+          setError("This time slot is already booked. Please select a different time.");
+          setIsSubmitting(false);
+          return;
+        }
         throw new Error(responseData.error || "Failed to book appointment");
       }
 
@@ -154,7 +158,7 @@ export default function AppointmentConfirmation({
             </svg>
           </div>
           <div className="mt-2 md:mt-0">
-            <h3 className="font-bold text-lg">Dr. {doctor.user.name}</h3>
+            <h3 className="font-bold text-lg">Dr. {doctor?.user?.name}</h3>
             <p className="text-gray-600">{doctor.specialization}</p>
           </div>
         </div>

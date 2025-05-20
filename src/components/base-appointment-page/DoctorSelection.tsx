@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface Doctor {
   id: number;
@@ -47,12 +45,11 @@ export default function DoctorSelection({
   const [activeSpecialty, setActiveSpecialty] = useState<string | undefined>(
     selectedSpecialty
   );
-
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/doctors?include=specialties");
+        const response = await fetch("/api/doctors?include=user,specialties");
 
         if (!response.ok) {
           throw new Error("Failed to fetch doctors");
@@ -218,7 +215,8 @@ export default function DoctorSelection({
 
               <div className="p-4">
                 <h3 className="font-bold text-lg text-gray-900">
-                  Dr. {doctor?.user?.name}
+                  {!doctor?.user?.name.includes("Dr.") && "Dr."}{" "}
+                  {doctor?.user?.name}
                 </h3>
                 <p className="text-indigo-600 font-medium">
                   {doctor.specialization}
@@ -227,7 +225,7 @@ export default function DoctorSelection({
                 <div className="mt-2 text-sm text-gray-600">
                   {doctor.experience && (
                     <p className="mb-1">
-                      <span className="font-medium">Experience:</span>{" "}
+                      <span className="font-medium">Experiences:</span>{" "}
                       {doctor.experience} years
                     </p>
                   )}
