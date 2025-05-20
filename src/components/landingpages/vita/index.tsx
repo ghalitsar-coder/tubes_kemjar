@@ -1,5 +1,4 @@
 import React from "react";
-import Header from "./Header";
 import HeroSection from "./HeroSection";
 import { StatsSection } from "./StatsSection";
 import { ServicesSection } from "./ServicesSection";
@@ -14,7 +13,6 @@ import Footer from "./Footer";
 const VitaCareHome: React.FC = () => {
   return (
     <>
-      <Header />
       <HeroSection />
       <StatsSection />
       <ServicesSection />

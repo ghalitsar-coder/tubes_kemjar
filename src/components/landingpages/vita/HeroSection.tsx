@@ -14,10 +14,12 @@ const HeroSection: React.FC = () => {
     >
       <div className="container mx-auto px-4">
         <div className="max-w-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Your Health Is Our{" "}
-            <span className="text-secondary">Top Priority</span>
-          </h1>
+          <Link href="/appointments/book">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              appointments/book (Debug){" "}
+              <span className="text-secondary">Top Priority</span>
+            </h1>
+          </Link>
           <p className="text-lg mb-8">
             We provide exceptional healthcare services with compassion and
             cutting-edge technology to ensure your well-being at every stage of
