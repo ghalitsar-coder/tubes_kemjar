@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { format } from "date-fns";
+import { useState, useEffect } from "react";
 
 interface Appointment {
   id: number;
@@ -22,12 +23,36 @@ interface Appointment {
   };
 }
 
-export default function AppointmentsPage() {
+// Loading placeholder component
+function AppointmentsLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">My Appointments</h1>
+        <div className="bg-gray-200 h-10 w-40 rounded-md animate-pulse"></div>
+      </div>
+      <div className="bg-white shadow-md rounded-lg overflow-hidden p-6">
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Content component that uses useSearchParams
+function AppointmentsContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const showSuccess = searchParams.get("success") === "true";
-
+  
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -297,8 +322,16 @@ export default function AppointmentsPage() {
           >
             Book an Appointment
           </button>
-        </div>
-      )}
+        </div>      )}
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function AppointmentsPage() {
+  return (
+    <Suspense fallback={<AppointmentsLoading />}>
+      <AppointmentsContent />
+    </Suspense>
   );
 }
