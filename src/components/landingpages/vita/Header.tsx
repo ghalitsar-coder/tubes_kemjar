@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 
-import { FaHeartbeat, FaBars } from "react-icons/fa";
+import { FaHeart, FaBars } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 
 const Header: React.FC = () => {
@@ -25,7 +25,7 @@ const Header: React.FC = () => {
     <header className="bg-sidebar shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center">
-          <FaHeartbeat className="text-primary text-3xl mr-2" />
+          <FaHeart className="text-primary text-3xl mr-2" />
 
           <span className="text-2xl font-bold text-primary">
             Vita<span className="text-secondary">Care</span>

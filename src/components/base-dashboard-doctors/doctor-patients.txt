@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard | Patient Consultations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#E0F2FE',
+                            DEFAULT: '#0EA5E9',
+                            dark: '#0369A1'
+                        },
+                        secondary: {
+                            light: '#F5F3FF',
+                            DEFAULT: '#8B5CF6',
+                            dark: '#5B21B6'
+                        },
+                        success: {
+                            light: '#D1FAE5',
+                            DEFAULT: '#10B981',
+                            dark: '#065F46'
+                        },
+                        warning: {
+                            light: '#FEF3C7',
+                            DEFAULT: '#F59E0B',
+                            dark: '#92400E'
+                        },
+                        danger: {
+                            light: '#FEE2E2',
+                            DEFAULT: '#EF4444',
+                            dark: '#991B1B'
+                        },
+                        dark: {
+                            DEFAULT: '#1E293B',
+                            light: '#334155'
+                        }
+                    },
+                    boxShadow: {
+                        card: '0 4px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'card-hover': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .sidebar {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-100%);
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(224, 242, 254, 0.5);
+        }
+        
+        .sidebar-item.active {
+            background-color: #E0F2FE;
+            color: #0369A1;
+            font-weight: 500;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .appointment-type {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-weight: 500;
+        }
+        
+        .pagination-link {
+            min-width: 36px;
+        }
+        
+        .pagination-link.active {
+            background-color: #0EA5E9;
+            color: white;
+        }
+        
+        .patient-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+        
+        .table-row:hover {
+            background-color: #F8FAFC;
+        }
+        
+        .switch input:checked + .switch-toggle {
+            transform: translateX(20px);
+            background-color: #0EA5E9;
+        }
+        
+        .switch-toggle {
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark">
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuButton" class="md:hidden fixed z-50 top-4 left-4 bg-white p-2 rounded-xl shadow-lg">
+        <i class="fas fa-bars text-primary"></i>
+    </button>
+
+    <!-- Dashboard Container -->
+    <div class="flex min-h-screen">
+     
+        
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-xl font-bold text-dark">Patient Consultations</h1>
+                    <span class="text-sm text-gray-500 hidden md:block">Today: <span class="font-medium">June 15, 2023</span></span>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="far fa-bell text-lg"></i>
+                            <span class="notification-badge bg-danger text-white rounded-full">3</span>
+                        </button>
+                    </div>
+                    
+                    <div class="relative">
+                        <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100">
+                            <img src="https://randomuser.me/api/portraits/men/42.jpg" alt="User" class="w-8 h-8 rounded-lg">
+                            <span class="hidden md:inline text-sm font-medium">Dr. Wilson</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content -->
+            <div class="h-[calc(100vh-73px)] overflow-y-auto p-6">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-6">
+                    <div class="bg-white rounded-xl shadow-card p-4 border border-gray-100 hover:shadow-card-hover transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Today's Appointments</p>
+                                <h3 class="text-2xl font-bold text-dark">8</h3>
+                                <p class="text-xs mt-1">
+                                    <span class="text-success">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        2 new
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="p-2 bg-primary-light rounded-lg text-primary">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-card p-4 border border-gray-100 hover:shadow-card-hover transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Completed</p>
+                                <h3 class="text-2xl font-bold text-dark">24</h3>
+                                <p class="text-xs mt-1">
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        92% success
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="p-2 bg-success-light rounded-lg text-success">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-card p-4 border border-gray-100 hover:shadow-card-hover transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Upcoming</p>
+                                <h3 class="text-2xl font-bold text-dark">12</h3>
+                                <p class="text-xs mt-1">
+                                    <span class="text-warning">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        3 tomorrow
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="p-2 bg-warning-light rounded-lg text-warning">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-card p-4 border border-gray-100 hover:shadow-card-hover transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Average Rating</p>
+                                <h3 class="text-2xl font-bold text-dark">4.8</h3>
+                                <p class="text-xs mt-1">
+                                    <span class="text-secondary">
+                                        <i class="fas fa-star mr-1"></i>
+                                        36 reviews
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="p-2 bg-secondary-light rounded-lg text-secondary">
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-card p-4 border border-gray-100 hover:shadow-card-hover transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Total Patients</p>
+                                <h3 class="text-2xl font-bold text-dark">142</h3>
+                                <p class="text-xs mt-1">
+                                    <span class="text-primary">
+                                        <i class="fas fa-user-plus mr-1"></i>
+                                        8 new
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filters and Actions -->
+                <div class="bg-white rounded-xl shadow-card p-4 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="relative max-w-md">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" placeholder="Search patients..." class="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <select class="bg-white text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+                                <option>All Status</option>
+                                <option>Completed</option>
+                                <option>Upcoming</option>
+                                <option>Cancelled</option>
+                            </select>
+                            
+                            <select class="bg-white text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+                                <option>All Types</option>
+                                <option>In-Person</option>
+                                <option>Video</option>
+                                <option>Phone</option>
+                            </select>
+                            
+                            <button class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                                <i class="fas fa-plus"></i>
+                                <span>New Consultation</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Patient List Table -->
+                <div class="bg-white rounded-xl shadow-card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Completed Consultation -->
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img class="patient-avatar" src="https://randomuser.me/api/portraits/women/43.jpg" alt="Patient">
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-dark">Sarah Johnson</div>
+                                                <div class="text-xs text-gray-500">35F • Last visit: May 15</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-dark">Jun 10, 9:00 AM</div>
+                                        <div class="text-xs text-gray-500">Duration: 30 mins</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="appointment-type border border-primary-light text-primary bg-primary-light">
+                                            <i class="fas fa-user-md mr-1"></i> In-Person
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge bg-success-light text-success-dark">
+                                            <i class="fas fa-check-circle mr-1"></i> Completed
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-dark">Routine Checkup</div>
+                                        <div class="text-xs text-gray-500">BP: 120/80, Weight: 68kg</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-gray-500 hover:text-primary p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-500 hover:text-success p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-notes-medical"></i>
+                                            </button>
+                                            <button class="text-gray-500 hover:text-danger p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Confirmed Consultation -->
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img class="patient-avatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Patient">
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-dark">Michael Chen</div>
+                                                <div class="text-xs text-gray-500">42M • Last visit: May 28</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-dark">Jun 15, 2:30 PM</div>
+                                        <div class="text-xs text-gray-500">Duration: 45 mins</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="appointment-type border border-secondary-light text-secondary bg-secondary-light">
+                                            <i class="fas fa-video mr-1"></i> Video Call
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge bg-primary-light text-primary-dark">
+                                            <i class="fas fa-check-circle mr-1"></i> Confirmed
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-dark">Hypertension Follow-up</div>
+                                        <div class="text-xs text-gray-500">Previous BP: 140/90</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-gray-500 hover:text-primary p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-500 hover:text-danger p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Pending Consultation -->
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img class="patient-avatar" src="https://randomuser.me/api/portraits/women/12.jpg" alt="Patient">
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-dark">Jennifer Davis</div>
+                                                <div class="text-xs text-gray-500">28F • New patient</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-dark">Jun 18, 10:15 AM</div>
+                                        <div class="text-xs text-gray-500">Duration: 30 mins</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="appointment-type border border-yellow-100 text-warning-dark bg-yellow-50">
+                                            <i class="fas fa-phone-alt mr-1"></i> Phone Call
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge bg-warning-light text-warning-dark">
+                                            <i class="fas fa-clock mr-1"></i> Pending
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-dark">Test Results Discussion</div>
+                                        <div class="text-xs text-gray-500">Blood work completed</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-white bg-primary hover:bg-primary-dark px-3 py-1 rounded-lg text-sm transition">
+                                                <i class="fas fa-check mr-1"></i> Confirm
+                                            </button>
+                                            <button class="text-danger border border-danger-light hover:bg-danger-light px-3 py-1 rounded-lg text-sm transition">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Cancelled Consultation -->
+                                <tr class="table-row bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img class="patient-avatar grayscale opacity-70" src="https://randomuser.me/api/portraits/men/45.jpg" alt="Patient">
+                                            </div>
+                                            <div class="ml-3 opacity-70">
+                                                <div class="text-sm font-medium text-gray-600">Robert Wilson</div>
+                                                <div class="text-xs text-gray-500">55M • Last visit: Apr 12</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-600">Jun 5, 11:00 AM</div>
+                                        <div class="text-xs text-gray-500">Duration: 45 mins</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="appointment-type border border-gray-200 text-gray-500 bg-gray-100">
+                                            <i class="fas fa-user-md mr-1"></i> In-Person
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge bg-danger-light text-danger-dark">
+                                            <i class="fas fa-times-circle mr-1"></i> Cancelled
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-600">Annual Physical</div>
+                                        <div class="text-xs text-gray-500">Patient requested</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-gray-500 hover:text-primary p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                            <button class="text-gray-500 hover:text-danger p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Rescheduled Consultation -->
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0">
+                                                <img class="patient-avatar" src="https://randomuser.me/api/portraits/women/65.jpg" alt="Patient">
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-dark">Amy Rodriguez</div>
+                                                <div class="text-xs text-gray-500">31F • Last visit: May 5</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-dark">Jun 20, 3:45 PM</div>
+                                        <div class="text-xs text-gray-500">Duration: 60 mins</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="appointment-type border border-primary-light text-primary bg-primary-light">
+                                            <i class="fas fa-user-md mr-1"></i> In-Person
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge bg-info-100 text-info-800">
+                                            <i class="fas fa-calendar-alt mr-1"></i> Rescheduled
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-dark">Diabetes Management</div>
+                                        <div class="text-xs text-gray-500">New treatment plan</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-gray-500 hover:text-primary p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-500 hover:text-warning p-2 rounded-lg hover:bg-gray-50 transition">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="bg-white px-6 py-4 border-t border-gray-200">
+                        <div class="flex flex-col md:flex-row items-center justify-between">
+                            <div class="mb-4 md:mb-0">
+                                <p class="text-sm text-gray-700">
+                                    Showing <span class="font-medium">1</span> to <span class="font-medium">5</span> of <span class="font-medium">24</span> consultations
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="inline-flex items-center space-x-1">
+                                    <button class="pagination-link flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        <i class="fas fa-chevron-left text-xs"></i>
+                                    </button>
+                                    <button class="pagination-link active flex items-center justify-center h-9 w-9 rounded-lg text-white">
+                                        1
+                                    </button>
+                                    <button class="pagination-link flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        2
+                                    </button>
+                                    <button class="pagination-link flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        3
+                                    </button>
+                                    <span class="px-2">...</span>
+                                    <button class="pagination-link flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        8
+                                    </button>
+                                    <button class="pagination-link flex items-center justify-center h-9 w-9 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        <i class="fas fa-chevron-right text-xs"></i>
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <!-- Gender Distribution -->
+                    <div class="bg-white p-5 rounded-xl shadow-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-medium text-dark">Patient Gender</h3>
+                            <select class="bg-white text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition">
+                                <option>This Month</option>
+                                <option>Last Month</option>
+                                <option>This Year</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="w-32 h-32 relative flex-shrink-0">
+                                <svg class="w-full h-full" viewBox="0 0 36 36">
+                                    <path d="M18 2.0845
+                                            a 15.9155 15.9155 0 0 1 0 31.831
+                                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none"
+                                            stroke="#E0E7FF"
+                                            stroke-width="3"
+                                            stroke-dasharray="65, 35"
+                                            stroke-dashoffset="0"
+                                            stroke-linecap="round"/>
+                                    <path d="M18 2.0845
+                                            a 15.9155 15.9155 0 0 1 0 31.831
+                                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                                          fill="none"
+                                          stroke="#8B5CF6"
+                                          stroke-width="3"
+                                          stroke-dasharray="35, 65"
+                                          stroke-dashoffset="65"
+                                          stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <div class="text-2xl font-bold text-dark">65%</div>
+                                    <div class="text-xs text-gray-500">Female</div>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-secondary rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-600">Female</span>
+                                    </div>
+                                    <span class="text-sm font-medium">65%</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-primary rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-600">Male</span>
+                                    </div>
+                                    <span class="text-sm font-medium">35%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Age Distribution -->
+                    <div class="bg-white p-5 rounded-xl shadow-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-medium text-dark">Age Distribution</h3>
+                            <select class="bg-white text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition">
+                                <option>This Month</option>
+                                <option>Last Month</option>
+                                <option>This Year</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-4 gap-4 h-36 items-end">
+                            <div>
+                                <div class="text-center text-xs mb-1">18-30</div>
+                                <div class="bg-blue-100 rounded-t-sm mx-auto" style="height: 40%; width: 70%;"></div>
+                                <div class="text-center text-xs mt-1">25%</div>
+                            </div>
+                            <div>
+                                <div class="text-center text-xs mb-1">31-45</div>
+                                <div class="bg-blue-300 rounded-t-sm mx-auto" style="height: 70%; width: 70%;"></div>
+                                <div class="text-center text-xs mt-1">45%</div>
+                            </div>
+                            <div>
+                                <div class="text-center text-xs mb-1">46-60</div>
+                                <div class="bg-blue-500 rounded-t-sm mx-auto" style="height: 50%; width: 70%;"></div>
+                                <div class="text-center text-xs mt-1">20%</div>
+                            </div>
+                            <div>
+                                <div class="text-center text-xs mb-1">60+</div>
+                                <div class="bg-blue-700 rounded-t-sm mx-auto" style="height: 30%; width: 70%;"></div>
+                                <div class="text-center text-xs mt-1">10%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Consultations by Type -->
+                    <div class="bg-white p-5 rounded-xl shadow-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-medium text-dark">Consultation Types</h3>
+                            <select class="bg-white text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition">
+                                <option>This Month</option>
+                                <option>Last Month</option>
+                                <option>This Year</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">In-Person</span>
+                                    <span class="font-medium">45%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Video Call</span>
+                                    <span class="font-medium">35%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div class="bg-secondary h-2 rounded-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Phone Call</span>
+                                    <span class="font-medium">20%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                    <div class="bg-info-500 h-2 rounded-full" style="width: 20%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const sidebar = document.getElementById('sidebar');
+
+        mobileMenuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+        });
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const html = document.documentElement;
+
+        darkModeToggle.addEventListener('change', () => {
+            if (darkModeToggle.checked) {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        });
+    </script>
+</body>
+</html>

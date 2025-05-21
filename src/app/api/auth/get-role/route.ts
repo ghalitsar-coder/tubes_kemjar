@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/clerk-helper";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { userId: clerkId } = auth();
+    const { userId: clerkId } = await auth();
     console.log("Auth check in GET role API:", { clerkId });
 
     // Jika tidak ada user yang login
