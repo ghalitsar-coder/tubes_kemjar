@@ -13,11 +13,13 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 
-import { FaHeart, FaBars } from "react-icons/fa";
+import { FaHeart, FaBars, FaUserAlt } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-
+// Removed invalid Router import
+import { useRouter } from "next/navigation";
 const Header: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { setTheme } = useTheme();
 
   const isExactAuthPath = ["/sign-up", "/sign-in"].includes(pathname);
@@ -56,7 +58,15 @@ const Header: React.FC = () => {
                 </button>
               </SignedOut>
               <SignedIn>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton afterSignOutUrl="/">
+                  <UserButton.MenuItems>
+                    <UserButton.Action
+                      onClick={() => router.push("/profile/edit")}
+                      labelIcon={<FaUserAlt />}
+                      label="Profile"
+                    />
+                  </UserButton.MenuItems>
+                </UserButton>
               </SignedIn>
             </>
           )}

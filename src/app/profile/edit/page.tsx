@@ -3,18 +3,45 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-interface PatientProfile {
-  id?: number;
-  dateOfBirth?: string;
-  gender?: string;
-  bloodType?: string;
-  height?: number;
-  weight?: number;
-  allergies?: string;
-  medicalHistory?: string;
-  emergencyContact?: string;
-}
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Define the form schema using zod
+const formSchema = z.object({
+  dateOfBirth: z.string().min(1, { message: "Date of birth is required" }),
+  gender: z.string().min(1, { message: "Gender is required" }),
+  bloodType: z.string().optional(),
+  height: z.coerce.number().positive().optional(),
+  weight: z.coerce.number().positive().optional(),
+  allergies: z.string().optional(),
+  medicalHistory: z.string().optional(),
+  emergencyContact: z
+    .string()
+    .min(1, { message: "Emergency contact is required" }),
+});
+
+// Define the form values type from the schema
+type FormValues = z.infer<typeof formSchema>;
 
 export default function EditPatientProfile() {
   const { user, isLoaded } = useUser();
@@ -24,15 +51,20 @@ export default function EditPatientProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PatientProfile>({
-    dateOfBirth: "",
-    gender: "",
-    bloodType: "",
-    height: undefined,
-    weight: undefined,
-    allergies: "",
-    medicalHistory: "",
-    emergencyContact: "",
+
+  // Initialize the form with react-hook-form and zod validation
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      dateOfBirth: "",
+      gender: "",
+      bloodType: "",
+      height: undefined,
+      weight: undefined,
+      allergies: "",
+      medicalHistory: "",
+      emergencyContact: "",
+    },
   });
 
   useEffect(() => {
@@ -51,11 +83,16 @@ export default function EditPatientProfile() {
           // Format date to YYYY-MM-DD for the input field
           const formattedDate = data.dateOfBirth
             ? new Date(data.dateOfBirth).toISOString().split("T")[0]
-            : "";
-
-          setFormData({
+            : "";          // Reset the form with fetched data
+          form.reset({
             ...data,
             dateOfBirth: formattedDate,
+            // Make sure height and weight are numbers or undefined
+            height: typeof data.height === "number" ? data.height : undefined,
+            weight: typeof data.weight === "number" ? data.weight : undefined,
+            // Ensure string values aren't null
+            allergies: data.allergies || "",
+            medicalHistory: data.medicalHistory || "",
           });
         } else if (response.status !== 404) {
           // 404 is expected for new users, only throw for other errors
@@ -72,25 +109,9 @@ export default function EditPatientProfile() {
     if (user) {
       fetchProfile();
     }
-  }, [user, isLoaded, router]);
+  }, [user, isLoaded, router, form]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "height" || name === "weight"
-          ? parseFloat(value) || undefined
-          : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: FormValues) => {
     setError(null);
     setSuccess(null);
     setIsSaving(true);
@@ -101,7 +122,7 @@ export default function EditPatientProfile() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(values),
       });
 
       if (!response.ok) {
@@ -153,196 +174,223 @@ export default function EditPatientProfile() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="col-span-1">
-                <label
-                  htmlFor="dateOfBirth"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Date of Birth*
-                </label>
-                <input
-                  type="date"
-                  id="dateOfBirth"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Date of Birth Field */}
+                <FormField
+                  control={form.control}
                   name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  required
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Date of Birth*</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="col-span-1">
-                <label
-                  htmlFor="gender"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Gender*
-                </label>
-                <select
-                  id="gender"
+                {/* Gender Field */}
+                <FormField
+                  control={form.control}
                   name="gender"
-                  value={formData.gender || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-              </div>
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Gender*</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Gender" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                          <SelectItem value="Prefer not to say">
+                            Prefer not to say
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="col-span-1">
-                <label
-                  htmlFor="bloodType"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Blood Type
-                </label>
-                <select
-                  id="bloodType"
+                {/* Blood Type Field */}
+                <FormField
+                  control={form.control}
                   name="bloodType"
-                  value={formData.bloodType || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Select Blood Type</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                  <option value="Unknown">Unknown</option>
-                </select>
-              </div>
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Blood Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Blood Type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="A+">A+</SelectItem>
+                          <SelectItem value="A-">A-</SelectItem>
+                          <SelectItem value="B+">B+</SelectItem>
+                          <SelectItem value="B-">B-</SelectItem>
+                          <SelectItem value="AB+">AB+</SelectItem>
+                          <SelectItem value="AB-">AB-</SelectItem>
+                          <SelectItem value="O+">O+</SelectItem>
+                          <SelectItem value="O-">O-</SelectItem>
+                          <SelectItem value="Unknown">Unknown</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="col-span-1">
-                <label
-                  htmlFor="height"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Height (cm)
-                </label>
-                <input
-                  type="number"
-                  id="height"
+                {/* Height Field */}
+                <FormField
+                  control={form.control}
                   name="height"
-                  value={formData.height || ""}
-                  onChange={handleChange}
-                  placeholder="Height in centimeters"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  min="0"
-                  step="0.1"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Height (cm)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Height in centimeters"
+                          {...field}
+                          value={field.value === undefined ? "" : field.value}
+                          onChange={(e) => {
+                            const value =
+                              e.target.value === ""
+                                ? undefined
+                                : parseFloat(e.target.value);
+                            field.onChange(value);
+                          }}
+                          min="0"
+                          step="0.1"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="col-span-1">
-                <label
-                  htmlFor="weight"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Weight (kg)
-                </label>
-                <input
-                  type="number"
-                  id="weight"
+                {/* Weight Field */}
+                <FormField
+                  control={form.control}
                   name="weight"
-                  value={formData.weight || ""}
-                  onChange={handleChange}
-                  placeholder="Weight in kilograms"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  min="0"
-                  step="0.1"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Weight (kg)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Weight in kilograms"
+                          {...field}
+                          value={field.value === undefined ? "" : field.value}
+                          onChange={(e) => {
+                            const value =
+                              e.target.value === ""
+                                ? undefined
+                                : parseFloat(e.target.value);
+                            field.onChange(value);
+                          }}
+                          min="0"
+                          step="0.1"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="col-span-1">
-                <label
-                  htmlFor="emergencyContact"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Emergency Contact*
-                </label>
-                <input
-                  type="text"
-                  id="emergencyContact"
+                {/* Emergency Contact Field */}
+                <FormField
+                  control={form.control}
                   name="emergencyContact"
-                  value={formData.emergencyContact || ""}
-                  onChange={handleChange}
-                  placeholder="Name and phone number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label
-                  htmlFor="allergies"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Allergies
-                </label>
-                <textarea
-                  id="allergies"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>Emergency Contact*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Name and phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />                {/* Allergies Field */}
+                <FormField
+                  control={form.control}
                   name="allergies"
-                  value={formData.allergies || ""}
-                  onChange={handleChange}
-                  placeholder="List any allergies you have"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label
-                  htmlFor="medicalHistory"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Medical History
-                </label>
-                <textarea
-                  id="medicalHistory"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Allergies</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="List any allergies you have"
+                          rows={3}
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />                {/* Medical History Field */}
+                <FormField
+                  control={form.control}
                   name="medicalHistory"
-                  value={formData.medicalHistory || ""}
-                  onChange={handleChange}
-                  placeholder="Relevant medical history, chronic conditions, surgeries, etc."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Medical History</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Relevant medical history, chronic conditions, surgeries, etc."
+                          rows={4}
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => router.push("/appointments")}
-                className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-md transition-colors order-2 sm:order-1"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving || !!success}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors flex justify-center items-center order-1 sm:order-2"
-              >
-                {isSaving ? (
-                  <>
-                    <span className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></span>
-                    Saving...
-                  </>
-                ) : (
-                  "Save Profile"
-                )}
-              </button>
-            </div>
-          </form>
+              <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
+                <Button
+                  type="button"
+                  onClick={() => router.push("/appointments")}
+                  variant="outline"
+                  className="order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving || !!success}
+                  className="order-1 sm:order-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Profile"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </div>
       </div>
     </div>
