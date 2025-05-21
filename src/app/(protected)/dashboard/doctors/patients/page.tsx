@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -175,22 +175,22 @@ export default function DoctorPatientsPage() {
   };
 
   // Color mapping for status badges
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-100 text-green-800";
-      case "CONFIRMED":
-        return "bg-blue-100 text-blue-800";
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800";
-      case "RESCHEDULED":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  // const getStatusBadgeColor = (status: string) => {
+  //   switch (status) {
+  //     case "COMPLETED":
+  //       return "bg-green-100 text-green-800";
+  //     case "CONFIRMED":
+  //       return "bg-blue-100 text-blue-800";
+  //     case "PENDING":
+  //       return "bg-yellow-100 text-yellow-800";
+  //     case "CANCELLED":
+  //       return "bg-red-100 text-red-800";
+  //     case "RESCHEDULED":
+  //       return "bg-purple-100 text-purple-800";
+  //     default:
+  //       return "bg-gray-100 text-gray-800";
+  //   }
+  // };
 
   // Appointment type icon mapping
   const getAppointmentTypeIcon = (type: string) => {
@@ -222,7 +222,7 @@ export default function DoctorPatientsPage() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">
-                  Today's Appointments
+                  Today`s Appointments
                 </p>
                 <h3 className="text-2xl font-bold">
                   {
