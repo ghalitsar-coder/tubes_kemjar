@@ -8,12 +8,9 @@ export async function GET(
 ) {
   try {
     const { userId: clerkId } = await auth();
-    
+
     if (!clerkId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const id = parseInt(params.id);
@@ -33,13 +30,8 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    // Fetch appointment
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    } // Fetch appointment
     const appointment = await prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -48,6 +40,17 @@ export async function GET(
             id: true,
             name: true,
             email: true,
+            profilePic: true,
+            patient: {
+              select: {
+                dateOfBirth: true,
+                gender: true,
+                bloodType: true,
+                allergies: true,
+                medicalHistory: true,
+                emergencyContact: true,
+              },
+            },
           },
         },
         doctor: {
@@ -77,10 +80,7 @@ export async function GET(
       !(user.doctor && user.doctor.id === appointment.doctor.id) &&
       !["ADMIN", "STAFF"].includes(user.role)
     ) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json(appointment);
@@ -99,12 +99,9 @@ export async function PATCH(
 ) {
   try {
     const { userId: clerkId } = await auth();
-    
+
     if (!clerkId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const id = parseInt(params.id);
@@ -124,10 +121,7 @@ export async function PATCH(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Fetch appointment
@@ -147,12 +141,13 @@ export async function PATCH(
     const { status, notes } = data;
 
     // Check permissions based on update data
-    
+
     // Status updates are restricted based on role
     if (status) {
       // Check if it's a doctor updating the status
-      const isRequestingDoctor = user.doctor && user.doctor.id === appointment.doctorId;
-      
+      const isRequestingDoctor =
+        user.doctor && user.doctor.id === appointment.doctorId;
+
       // Only doctors can confirm appointments
       if (status === "CONFIRMED" && !isRequestingDoctor) {
         return NextResponse.json(
@@ -162,7 +157,11 @@ export async function PATCH(
       }
 
       // Patients can only cancel their own appointments
-      if (status === "CANCELLED" && user.role === "PATIENT" && user.id !== appointment.patientId) {
+      if (
+        status === "CANCELLED" &&
+        user.role === "PATIENT" &&
+        user.id !== appointment.patientId
+      ) {
         return NextResponse.json(
           { error: "You can only cancel your own appointments" },
           { status: 403 }
@@ -170,7 +169,11 @@ export async function PATCH(
       }
 
       // Only doctors or admin/staff can mark as completed
-      if (status === "COMPLETED" && !isRequestingDoctor && !["ADMIN", "STAFF"].includes(user.role)) {
+      if (
+        status === "COMPLETED" &&
+        !isRequestingDoctor &&
+        !["ADMIN", "STAFF"].includes(user.role)
+      ) {
         return NextResponse.json(
           { error: "Only doctors or staff can mark appointments as completed" },
           { status: 403 }

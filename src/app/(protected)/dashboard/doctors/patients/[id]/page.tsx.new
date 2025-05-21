@@ -1,0 +1,364 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ChevronLeft, Calendar, Clock, Loader2, User, MailIcon, Phone, CalendarClock } from "lucide-react";
+
+type Patient = {
+  id: number;
+  name: string;
+  email: string;
+  profilePic?: string;
+  patient?: {
+    dateOfBirth?: string;
+    gender?: string;
+    bloodType?: string;
+    height?: number;
+    weight?: number;
+    allergies?: string;
+    medicalHistory?: string;
+    emergencyContact?: string;
+  };
+};
+
+type Appointment = {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "RESCHEDULED";
+  type: "IN_PERSON" | "VIDEO_CALL" | "PHONE_CALL";
+  reason: string;
+  notes?: string;
+};
+
+export default function PatientDetailPage({ params }: { params: { id: string } }) {
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchPatientDetails = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch patient details
+        const patientResponse = await fetch(`/api/doctors/patients/${params.id}`);
+        
+        if (!patientResponse.ok) {
+          throw new Error("Failed to fetch patient details");
+        }
+        
+        const patientData = await patientResponse.json();
+        setPatient(patientData);
+        
+        // Fetch patient's appointments
+        const appointmentsResponse = await fetch(`/api/doctors/patients/${params.id}/appointments`);
+        
+        if (!appointmentsResponse.ok) {
+          throw new Error("Failed to fetch patient appointments");
+        }
+        
+        const appointmentsData = await appointmentsResponse.json();
+        setAppointments(appointmentsData);
+      } catch (error) {
+        console.error("Error fetching patient details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPatientDetails();
+  }, [params.id]);
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd MMMM yyyy", { locale: id });
+  };
+  
+  // Format time
+  const formatTime = (timeString: string) => {
+    return format(new Date(timeString), "HH:mm");
+  };
+  
+  // Get age from date of birth
+  const getAge = (dateOfBirth?: string) => {
+    if (!dateOfBirth) return "";
+    
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return `${age} tahun`;
+  };
+  
+  // Get status badge
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Menunggu</Badge>;
+      case "CONFIRMED":
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800">Dikonfirmasi</Badge>;
+      case "COMPLETED":
+        return <Badge variant="outline" className="bg-green-100 text-green-800">Selesai</Badge>;
+      case "CANCELLED":
+        return <Badge variant="outline" className="bg-red-100 text-red-800">Dibatalkan</Badge>;
+      case "RESCHEDULED":
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800">Dijadwalkan Ulang</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Memuat data pasien...</span>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="container mx-auto py-6">
+        <Button 
+          variant="outline" 
+          className="mb-4" 
+          onClick={() => router.push("/doctors/patients")}
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Kembali ke Daftar Pasien
+        </Button>
+        
+        <div className="text-center p-8 bg-muted rounded-lg">
+          <p className="text-muted-foreground">Pasien tidak ditemukan atau Anda tidak memiliki akses</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <Button 
+        variant="outline" 
+        className="mb-4" 
+        onClick={() => router.push("/doctors/patients")}
+      >
+        <ChevronLeft className="h-4 w-4 mr-1" />
+        Kembali ke Daftar Pasien
+      </Button>
+      
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col items-center">
+                <Avatar className="h-24 w-24 mb-2">
+                  <AvatarImage src={patient.profilePic} alt={patient.name} />
+                  <AvatarFallback className="text-2xl">{patient.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <CardTitle className="text-center">{patient.name}</CardTitle>
+                {patient.patient?.dateOfBirth && (
+                  <CardDescription className="text-center">
+                    {getAge(patient.patient.dateOfBirth)}
+                  </CardDescription>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center">
+                <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">{patient.email}</span>
+              </div>
+              
+              {patient.patient?.emergencyContact && (
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="text-sm">{patient.patient.emergencyContact}</span>
+                </div>
+              )}
+              
+              <Separator />
+              
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium">Informasi Medis</h3>
+                
+                {patient.patient?.gender && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Jenis Kelamin</p>
+                    <p className="text-sm">{patient.patient.gender}</p>
+                  </div>
+                )}
+                
+                {patient.patient?.bloodType && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Golongan Darah</p>
+                    <p className="text-sm">{patient.patient.bloodType}</p>
+                  </div>
+                )}
+                
+                {(patient.patient?.height || patient.patient?.weight) && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {patient.patient.height && patient.patient.weight 
+                        ? "Tinggi / Berat"
+                        : patient.patient.height 
+                        ? "Tinggi"
+                        : "Berat"}
+                    </p>
+                    <p className="text-sm">
+                      {patient.patient.height && `${patient.patient.height} cm`}
+                      {patient.patient.height && patient.patient.weight && " / "}
+                      {patient.patient.weight && `${patient.patient.weight} kg`}
+                    </p>
+                  </div>
+                )}
+                
+                {patient.patient?.allergies && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Alergi</p>
+                    <p className="text-sm whitespace-pre-wrap">{patient.patient.allergies}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => router.push(`/doctors/appointments/book?patientId=${patient.id}`)}
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                Buat Janji Temu
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          {patient.patient?.medicalHistory && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-base">Riwayat Medis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{patient.patient.medicalHistory}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+        
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Riwayat Kunjungan</CardTitle>
+              <CardDescription>
+                Daftar janji temu dengan {patient.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="all">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="all">Semua</TabsTrigger>
+                  <TabsTrigger value="completed">Selesai</TabsTrigger>
+                  <TabsTrigger value="upcoming">Akan Datang</TabsTrigger>
+                  <TabsTrigger value="cancelled">Dibatalkan</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all">
+                  {renderAppointmentsList(appointments)}
+                </TabsContent>
+                
+                <TabsContent value="completed">
+                  {renderAppointmentsList(appointments.filter(app => app.status === "COMPLETED"))}
+                </TabsContent>
+                
+                <TabsContent value="upcoming">
+                  {renderAppointmentsList(appointments.filter(app => 
+                    app.status === "CONFIRMED" || app.status === "PENDING"
+                  ))}
+                </TabsContent>
+                
+                <TabsContent value="cancelled">
+                  {renderAppointmentsList(appointments.filter(app => 
+                    app.status === "CANCELLED" || app.status === "RESCHEDULED"
+                  ))}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+  
+  function renderAppointmentsList(appointmentsList: Appointment[]) {
+    if (appointmentsList.length === 0) {
+      return (
+        <div className="text-center py-8 bg-muted/10 rounded-lg">
+          <CalendarClock className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+          <p className="text-muted-foreground">Tidak ada janji temu</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-4">
+        {appointmentsList.map((app) => (
+          <div key={app.id} className="border rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  <span className="font-medium">{formatDate(app.date)}</span>
+                </div>
+                <div className="flex items-center mt-1 text-sm text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  <span>
+                    {formatTime(app.startTime)} - {formatTime(app.endTime)}
+                  </span>
+                </div>
+              </div>
+              {getStatusBadge(app.status)}
+            </div>
+            
+            <div className="mt-3">
+              <p className="text-xs text-muted-foreground mb-1">Alasan Kunjungan</p>
+              <p className="text-sm">{app.reason}</p>
+            </div>
+            
+            {app.notes && (
+              <div className="mt-3">
+                <p className="text-xs text-muted-foreground mb-1">Catatan Dokter</p>
+                <p className="text-sm whitespace-pre-wrap">{app.notes}</p>
+              </div>
+            )}
+            
+            <div className="flex justify-end mt-3">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => router.push(`/doctors/appointments/${app.id}`)}
+              >
+                Lihat Detail
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+}

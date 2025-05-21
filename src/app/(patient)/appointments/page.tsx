@@ -52,7 +52,7 @@ function AppointmentsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const showSuccess = searchParams.get("success") === "true";
-  
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -322,7 +322,8 @@ function AppointmentsContent() {
           >
             Book an Appointment
           </button>
-        </div>      )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Details | Doctor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#E0F2FE',
+                            DEFAULT: '#0EA5E9',
+                            dark: '#0369A1'
+                        },
+                        secondary: {
+                            light: '#F5F3FF',
+                            DEFAULT: '#8B5CF6',
+                            dark: '#5B21B6'
+                        },
+                        success: {
+                            light: '#D1FAE5',
+                            DEFAULT: '#10B981',
+                            dark: '#065F46'
+                        },
+                        warning: {
+                            light: '#FEF3C7',
+                            DEFAULT: '#F59E0B',
+                            dark: '#92400E'
+                        },
+                        danger: {
+                            light: '#FEE2E2',
+                            DEFAULT: '#EF4444',
+                            dark: '#991B1B'
+                        },
+                        dark: {
+                            DEFAULT: '#1E293B',
+                            light: '#334155'
+                        },
+                        info: {
+                            light: '#DBEAFE',
+                            DEFAULT: '#3B82F6',
+                            dark: '#1E40AF'
+                        }
+                    },
+                    boxShadow: {
+                        card: '0 4px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'card-hover': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .sidebar {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-100%);
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(224, 242, 254, 0.5);
+        }
+        
+        .sidebar-item.active {
+            background-color: #E0F2FE;
+            color: #0369A1;
+            font-weight: 500;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 32px;
+            bottom: -16px;
+            width: 2px;
+            background-color: #E5E7EB;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+        
+        .tab-active {
+            color: #0EA5E9;
+            border-bottom: 2px solid #0EA5E9;
+        }
+        
+        .switch input:checked + .switch-toggle {
+            transform: translateX(20px);
+            background-color: #0EA5E9;
+        }
+        
+        .switch-toggle {
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark">
+    <!-- Dashboard Container -->
+    <div class="flex min-h-screen">
+       
+        
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-500 hover:text-primary">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-xl font-bold text-dark">Patient Details</h1>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="far fa-bell text-lg"></i>
+                            <span class="notification-badge bg-danger text-white rounded-full">3</span>
+                        </button>
+                    </div>
+                    
+                    <div class="relative">
+                        <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100">
+                            <img src="https://randomuser.me/api/portraits/men/42.jpg" alt="User" class="w-8 h-8 rounded-lg">
+                            <span class="hidden md:inline text-sm font-medium">Dr. Wilson</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Patient Main Content -->
+            <div class="h-[calc(100vh-73px)] overflow-y-auto p-6">
+                <!-- Patient Header -->
+                <div class="bg-white rounded-xl shadow-card overflow-hidden mb-6">
+                    <div class="flex flex-col md:flex-row">
+                        <!-- Patient Profile -->
+                        <div class="p-6 flex-1">
+                            <div class="flex flex-col md:flex-row md:items-center gap-6">
+                                <div class="flex-shrink-0">
+                                    <img src="https://randomuser.me/api/portraits/women/43.jpg" alt="Patient" class="w-24 h-24 rounded-xl object-cover border-2 border-primary-light">
+                                </div>
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+                                        <h2 class="text-2xl font-bold text-dark">Sarah Johnson</h2>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="status-badge bg-success-light text-success-dark">
+                                                <i class="fas fa-check-circle mr-1"></i> Active Patient
+                                            </span>
+                                            <button class="text-gray-500 hover:text-danger p-2 rounded-lg hover:bg-gray-50">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mb-3">
+                                        <div class="flex items-center">
+                                            <span class="text-gray-500 mr-1"><i class="fas fa-user-tag"></i></span>
+                                            <span>PID-2300192</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-gray-500 mr-1"><i class="fas fa-birthday-cake"></i></span>
+                                            <span>35 years old (Feb 5, 1989)</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-gray-500 mr-1"><i class="fas fa-venus-mars"></i></span>
+                                            <span>Female</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-gray-500 mr-1"><i class="fas fa-phone-alt"></i></span>
+                                            <span>+1 (555) 123-4567</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap items-center gap-4">
+                                        <button class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center space-x-2 text-sm transition">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            <span>Schedule Appointment</span>
+                                        </button>
+                                        <button class="border border-primary text-primary hover:bg-primary-light px-4 py-2 rounded-lg flex items-center space-x-2 text-sm transition">
+                                            <i class="fas fa-comment-medical"></i>
+                                            <span>Send Message</span>
+                                        </button>
+                                        <button class="border border-gray-300 text-dark hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center space-x-2 text-sm transition">
+                                            <i class="fas fa-file-medical"></i>
+                                            <span>Medical Report</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="bg-gray-50 p-6 md:w-80 lg:w-96 border-l border-t md:border-t-0 border-gray-200">
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Health Overview</h3>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500">Blood Type</p>
+                                    <p class="text-sm font-medium">O+</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Height</p>
+                                    <p class="text-sm font-medium">165 cm (5'5")</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Weight</p>
+                                    <p class="text-sm font-medium">68 kg (150 lbs)</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">BMI</p>
+                                    <p class="text-sm font-medium">25.0</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Last BP</p>
+                                    <p class="text-sm font-medium">120/80 mmHg</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Allergies</p>
+                                    <p class="text-sm font-medium">Penicillin, Pollen</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200 mb-6 overflow-x-auto custom-scrollbar">
+                    <button class="tab-active px-4 py-3 text-sm font-medium whitespace-nowrap">
+                        <i class="fas fa-file-medical mr-2"></i> Medical Records
+                    </button>
+                    <button class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-dark whitespace-nowrap">
+                        <i class="fas fa-calendar-alt mr-2"></i> Appointments
+                    </button>
+                    <button class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-dark whitespace-nowrap">
+                        <i class="fas fa-prescription mr-2"></i> Prescriptions
+                    </button>
+                    <button class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-dark whitespace-nowrap">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i> Billing
+                    </button>
+                    <button class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-dark whitespace-nowrap">
+                        <i class="fas fa-file-alt mr-2"></i> Documents
+                    </button>
+                </div>
+                
+                <!-- Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Patient Summary -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-dark">Patient Summary</h3>
+                                <button class="text-primary hover:text-primary-dark text-sm font-medium">
+                                    <i class="fas fa-pen mr-1"></i> Edit
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Basic Info -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Basic Information</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500">Full Name</p>
+                                            <p class="text-sm font-medium">Sarah Marie Johnson</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Date of Birth</p>
+                                            <p class="text-sm font-medium">February 5, 1989 (35 years)</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Gender</p>
+                                            <p class="text-sm font-medium">Female</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Contact Number</p>
+                                            <p class="text-sm font-medium">+1 (555) 123-4567</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Email Address</p>
+                                            <p class="text-sm font-medium">sarah.johnson@example.com</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Address</p>
+                                            <p class="text-sm font-medium">1234 Main St, Apartment 5B, Portland, OR 97201</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Medical Info -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Medical Information</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500">Blood Type</p>
+                                            <p class="text-sm font-medium">O+ (Rh positive)</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Height & Weight</p>
+                                            <p class="text-sm font-medium">165 cm (5'5") • 68 kg (150 lbs) • BMI: 25.0</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Allergies</p>
+                                            <p class="text-sm font-medium">Penicillin (Severe), Pollen (Seasonal), Peanuts (Mild)</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Chronic Conditions</p>
+                                            <p class="text-sm font-medium">Mild hypertension, Seasonal allergies</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Current Medications</p>
+                                            <p class="text-sm font-medium">Loratadine (10mg daily), Vitamin D (1000 IU daily)</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Emergency Contact</p>
+                                            <p class="text-sm font-medium">Michael Johnson (Husband) - +1 (555) 987-6543</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Appointment History -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-dark">Appointment History</h3>
+                                <button class="text-sm text-primary hover:text-primary-dark font-medium">
+                                    View All <i class="fas fa-chevron-right ml-1"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <!-- Recent Appointment -->
+                                <div class="bg-primary-light rounded-lg p-4 border border-primary-lightest">
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+                                        <div>
+                                            <span class="status-badge bg-success-light text-success-dark mb-1">
+                                                <i class="fas fa-check-circle mr-1"></i> Completed
+                                            </span>
+                                            <h4 class="font-medium">Routine Checkup</h4>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-medium text-dark">June 10, 2023</p>
+                                            <p class="text-xs text-gray-500">9:00 AM - 9:30 AM</p>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500">Doctor</p>
+                                            <p class="text-sm font-medium">Dr. James Wilson</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Type</p>
+                                            <p class="text-sm font-medium">
+                                                <i class="fas fa-user-md mr-1 text-primary"></i> In-Person
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Vitals</p>
+                                            <p class="text-sm font-medium">BP: 120/80 • Pulse: 72 • Temp: 98.6°F</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Notes</p>
+                                            <p class="text-sm font-medium">Patient reports feeling well, no complaints</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Future Appointment -->
+                                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+                                        <div>
+                                            <span class="status-badge bg-primary-light text-primary-dark mb-1">
+                                                <i class="fas fa-calendar-check mr-1"></i> Confirmed
+                                            </span>
+                                            <h4 class="font-medium">Hypertension Follow-up</h4>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-medium text-dark">June 15, 2023</p>
+                                            <p class="text-xs text-gray-500">2:30 PM - 3:15 PM</p>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500">Doctor</p>
+                                            <p class="text-sm font-medium">Dr. James Wilson</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Type</p>
+                                            <p class="text-sm font-medium">
+                                                <i class="fas fa-video mr-1 text-secondary"></i> Video Call
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Reason</p>
+                                            <p class="text-sm font-medium">Monitor blood pressure, review medication</p>
+                                        </div>
+                                        <div>
+                                            <button class="text-sm text-danger hover:text-danger-dark font-medium">
+                                                <i class="fas fa-times mr-1"></i> Cancel Appointment
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Medical Notes -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-dark">Medical Notes</h3>
+                                <button class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-1 transition">
+                                    <i class="fas fa-plus mr-1"></i>
+                                    <span>Add Note</span>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4 relative">
+                                <!-- Note 1 -->
+                                <div class="timeline-item pl-8 relative">
+                                    <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-primary-light flex items-center justify-center">
+                                        <i class="fas fa-stethoscope text-primary text-sm"></i>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs font-medium text-gray-500">June 10, 2023 • 10:24 AM</span>
+                                            <div>
+                                                <button class="text-gray-400 hover:text-primary p-1">
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center mb-2">
+                                            <span class="text-xs font-medium bg-info-light text-info-dark px-2 py-1 rounded mr-2">Diagnosis</span>
+                                            <span class="text-xs font-medium">Dr. James Wilson</span>
+                                        </div>
+                                        <p class="text-sm">Patient presents for routine annual checkup. Reports feeling well with no acute complaints. Blood pressure is well controlled at 120/80. BMI is 25.0, recommending modest dietary adjustments to aim for weight loss of 2-3 kg. No changes to current medications needed. Advised to continue current regimen and return in 3 months for blood pressure follow-up.</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Note 2 -->
+                                <div class="timeline-item pl-8 relative">
+                                    <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-success-light flex items-center justify-center">
+                                        <i class="fas fa-file-prescription text-success text-sm"></i>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs font-medium text-gray-500">March 15, 2023 • 3:42 PM</span>
+                                            <div>
+                                                <button class="text-gray-400 hover:text-primary p-1">
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center mb-2">
+                                            <span class="text-xs font-medium bg-purple-100 text-purple-800 px-2 py-1 rounded mr-2">Prescription</span>
+                                            <span class="text-xs font-medium">Dr. James Wilson</span>
+                                        </div>
+                                        <p class="text-sm">Renewed prescription for Loratadine 10mg tablets to manage seasonal allergy symptoms. Advised to take one tablet daily as needed, not to exceed recommended dosage. Patient reports occasional dry mouth but otherwise tolerates medication well. No changes to formulation or dosage at this time.</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Note 3 -->
+                                <div class="timeline-item pl-8 relative">
+                                    <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-warning-light flex items-center justify-center">
+                                        <i class="fas fa-notes-medical text-warning text-sm"></i>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs font-medium text-gray-500">January 5, 2023 • 11:15 AM</span>
+                                            <div>
+                                                <button class="text-gray-400 hover:text-primary p-1">
+                                                    <i class="fas fa-pen text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center mb-2">
+                                            <span class="text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded mr-2">Assessment</span>
+                                            <span class="text-xs font-medium">Dr. James Wilson</span>
+                                        </div>
+                                        <p class="text-sm mb-3">Patient reports mild fatigue and occasional headaches over past 2 weeks. Blood pressure reading was 138/85, slightly elevated from previous appointment. Ordered complete blood count and metabolic panel to rule out anemia or other underlying conditions. Recommend increasing water intake and monitoring BP at home for next 2 weeks.</p>
+                                        <div class="text-xs bg-blue-50 border border-blue-100 rounded p-2">
+                                            <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                                            <strong>Lab Results:</strong> CBC and metabolic panel results all within normal ranges. No evidence of anemia or electrolyte imbalances detected.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Health Records -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <h3 class="text-lg font-medium text-dark mb-4">Health Records</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="border-b border-gray-200 pb-4">
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Recent Vitals</h4>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-gray-500">Blood Pressure</p>
+                                            <p class="text-xl font-bold text-dark">120/80</p>
+                                            <p class="text-xs text-success mt-1">
+                                                <i class="fas fa-check-circle mr-1"></i> Normal
+                                            </p>
+                                        </div>
+                                        <div class="p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-gray-500">Pulse Rate</p>
+                                            <p class="text-xl font-bold text-dark">72</p>
+                                            <p class="text-xs text-success mt-1">
+                                                <i class="fas fa-check-circle mr-1"></i> Normal
+                                            </p>
+                                        </div>
+                                        <div class="p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-gray-500">Temperature</p>
+                                            <p class="text-xl font-bold text-dark">98.6°F</p>
+                                            <p class="text-xs text-success mt-1">
+                                                <i class="fas fa-check-circle mr-1"></i> Normal
+                                            </p>
+                                        </div>
+                                        <div class="p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-gray-500">Weight</p>
+                                            <p class="text-xl font-bold text-dark">68 kg</p>
+                                            <p class="text-xs text-warning mt-1">
+                                                <i class="fas fa-info-circle mr-1"></i> Overweight
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-b border-gray-200 pb-4">
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Recent Lab Results</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="text-sm font-medium">Complete Blood Count</p>
+                                                <p class="text-xs text-gray-500">Mar 18, 2023</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded">Normal</span>
+                                                <button class="text-primary hover:text-primary-dark">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="text-sm font-medium">Metabolic Panel</p>
+                                                <p class="text-xs text-gray-500">Mar 18, 2023</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded">Normal</span>
+                                                <button class="text-primary hover:text-primary-dark">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="text-sm font-medium">Lipid Panel</p>
+                                                <p class="text-xs text-gray-500">Jan 5, 2023</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Warning</span>
+                                                <button class="text-primary hover:text-primary-dark">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-500 mb-3">Active Medications</h4>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div>
+                                                <p class="text-sm font-medium">Loratadine</p>
+                                                <p class="text-xs text-gray-500">10mg tablet • Once daily</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded">Allergies</span>
+                                                <button class="text-primary hover:text-primary-dark">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div>
+                                                <p class="text-sm font-medium">Vitamin D</p>
+                                                <p class="text-xs text-gray-500">1000 IU capsule • Once daily</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded">Supplement</span>
+                                                <button class="text-primary hover:text-primary-dark">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <h3 class="text-lg font-medium text-dark mb-4">Quick Actions</h3>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-primary hover:bg-primary-light rounded-lg transition">
+                                    <div class="w-10 h-10 bg-primary-light text-primary rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-file-prescription"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">New Prescription</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-success hover:bg-success-light rounded-lg transition">
+                                    <div class="w-10 h-10 bg-success-light text-success rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-plus"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">Add Lab Order</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-warning hover:bg-warning-light rounded-lg transition">
+                                    <div class="w-10 h-10 bg-warning-light text-warning rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-file-medical-alt"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">Create Note</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-secondary hover:bg-secondary-light rounded-lg transition">
+                                    <div class="w-10 h-10 bg-secondary-light text-secondary rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">Schedule Follow-up</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-danger hover:bg-danger-light rounded-lg transition">
+                                    <div class="w-10 h-10 bg-danger-light text-danger rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">Send Message</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 border border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-lg transition">
+                                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-file-download"></i>
+                                    </div>
+                                    <span class="text-sm font-medium">Export Records</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Patient Documents -->
+                        <div class="bg-white rounded-xl shadow-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-dark">Documents</h3>
+                                <button class="text-sm text-primary hover:text-primary-dark font-medium">
+                                    <i class="fas fa-plus mr-1"></i> Add
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div class="flex items-center p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="fas fa-file-pdf text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">Lab Results - March 2023.pdf</p>
+                                        <p class="text-xs text-gray-500">Uploaded Mar 18, 2023</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-primary ml-2">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-green-100 text-green-600 rounded flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="fas fa-file-excel text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">Bloodwork Jan 2023.xlsx</p>
+                                        <p class="text-xs text-gray-500">Uploaded Jan 7, 2023</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-primary ml-2">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-yellow-100 text-yellow-600 rounded flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="fas fa-file-image text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate">X-Ray - Right Knee.jpg</p>
+                                        <p class="text-xs text-gray-500">Uploaded Dec 2, 2022</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-primary ml-2">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                                
+                                <button class="w-full text-center text-sm text-primary hover:text-primary-dark font-medium mt-3">
+                                    View All Documents <i class="fas fa-chevron-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const sidebar = document.getElementById('sidebar');
+
+        mobileMenuButton.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+        });
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.flex.border-b button');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('tab-active'));
+                tab.classList.add('tab-active');
+            });
+        });
+    </script>
+</body>
+</html>

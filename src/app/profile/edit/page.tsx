@@ -329,7 +329,7 @@ export default function EditPatientProfile() {
               </button>
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || !!success}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors flex justify-center items-center order-1 sm:order-2"
               >
                 {isSaving ? (

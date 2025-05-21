@@ -19,7 +19,6 @@ export function useUserRole(): UserRoleData {
   const { user, isLoaded } = useUser();
   const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     // Jika user belum dimuat, tunggu
     if (!isLoaded) return;
@@ -32,6 +31,22 @@ export function useUserRole(): UserRoleData {
     } // Jika user ada, ambil role dari API
     async function fetchUserRole() {
       try {
+        // First, check for development cookie override (only in development)
+        if (process.env.NODE_ENV === "development") {
+          const cookies = document.cookie.split(";");
+          const devRoleCookie = cookies.find((cookie) =>
+            cookie.trim().startsWith("dev-user-role=")
+          );
+
+          if (devRoleCookie) {
+            const devRole = devRoleCookie.split("=")[1].trim();
+            console.log("Using development role override:", devRole);
+            setRole(devRole);
+            setIsLoading(false);
+            return;
+          }
+        }
+
         // Menambahkan parameter untuk mencegah cache
         const response = await fetch(`/api/auth/get-role?t=${Date.now()}`, {
           method: "GET",
