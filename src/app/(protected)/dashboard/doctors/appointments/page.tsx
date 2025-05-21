@@ -137,32 +137,32 @@ export default function DoctorAppointmentsPage() {
       );
     return true;
   });
-  console.log(`THIS IS  appointments:`, appointments)
+  console.log(`THIS IS  appointments:`, appointments);
   // Get today's appointments
   const today = new Date().toISOString().split("T")[0];
-  const todaysAppointments = appointments.filter(
-    (app) => {
-      // Normalize the date format for comparison
-      const appointmentDate = new Date(app.date).toISOString().split("T")[0];
-      return appointmentDate === today &&
-        (app.status === "CONFIRMED" || app.status === "PENDING");
-    }
-  );
-  console.log(`THIS IS  todaysAppointments:`, todaysAppointments)
+  const todaysAppointments = appointments.filter((app) => {
+    // Normalize the date format for comparison
+    const appointmentDate = new Date(app.date).toISOString().split("T")[0];
+    return (
+      appointmentDate === today &&
+      (app.status === "CONFIRMED" || app.status === "PENDING")
+    );
+  });
+  console.log(`THIS IS  todaysAppointments:`, todaysAppointments);
   // Get upcoming appointments
   const upcomingAppointments = appointments
-    .filter(
-      (app) => {
-        // Normalize the date format for comparison
-        const appointmentDate = new Date(app.date).toISOString().split("T")[0];
-        return (appointmentDate > today &&
+    .filter((app) => {
+      // Normalize the date format for comparison
+      const appointmentDate = new Date(app.date).toISOString().split("T")[0];
+      return (
+        (appointmentDate > today &&
           app.status !== "CANCELLED" &&
           app.status !== "COMPLETED") ||
         (appointmentDate === today &&
           app.status !== "CANCELLED" &&
-          app.status !== "COMPLETED");
-      }
-    )
+          app.status !== "COMPLETED")
+      );
+    })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
 
