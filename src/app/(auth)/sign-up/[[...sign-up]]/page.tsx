@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Simple header */}
-      <Navbar />
+      {/* <Navbar /> */}
 
       <div className="flex-1 flex items-center justify-center p-4">
         <SignUp
