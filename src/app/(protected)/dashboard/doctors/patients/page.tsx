@@ -93,11 +93,13 @@ export default function DoctorPatientsPage() {
 
       if (!response.ok) {
         throw new Error("Failed to fetch patients");
+      }      const data = await response.json();
+      if (data.success && data.patients) {
+        setPatients(data.patients);
+        setFilteredPatients(data.patients);
+      } else {
+        throw new Error(data.error || "Failed to fetch patients");
       }
-
-      const data = await response.json();
-      setPatients(data);
-      setFilteredPatients(data);
     } catch (error) {
       console.error("Error fetching patients:", error);
     } finally {

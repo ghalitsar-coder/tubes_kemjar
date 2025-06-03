@@ -53,11 +53,13 @@ export default function DoctorSelection({
 
         if (!response.ok) {
           throw new Error("Failed to fetch doctors");
+        }        const data = await response.json();
+        if (data.success && data.doctors) {
+          setDoctors(data.doctors);
+          setFilteredDoctors(data.doctors);
+        } else {
+          throw new Error(data.error || "Failed to fetch doctors");
         }
-
-        const data = await response.json();
-        setDoctors(data);
-        setFilteredDoctors(data);
       } catch (err) {
         console.error("Error fetching doctors:", err);
         setError("Failed to load doctors. Please try again later.");
@@ -72,10 +74,12 @@ export default function DoctorSelection({
 
         if (!response.ok) {
           throw new Error("Failed to fetch specialties");
+        }        const data = await response.json();
+        if (data.success && data.specialties) {
+          setSpecialties(data.specialties);
+        } else {
+          throw new Error(data.error || "Failed to fetch specialties");
         }
-
-        const data = await response.json();
-        setSpecialties(data);
       } catch (err) {
         console.error("Error fetching specialties:", err);
       }

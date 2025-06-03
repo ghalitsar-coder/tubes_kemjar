@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthFromApiRoute } from "@/lib/clerk-helper";
+import { withSecurity } from "@/lib/security-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
+  return withSecurity(
+    async () => {
     // Get current user from auth
     const { userId: clerkId } = await getAuthFromApiRoute(request);
 

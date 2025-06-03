@@ -70,15 +70,18 @@ export const clerkMiddleware = async (
   if (clerkId) {
     if (process.env.NODE_ENV !== "production") {
       console.log(`Request authenticated with Clerk ID: ${clerkId}`);
-    }
-
-    try {
-      // Find the user in our database using raw query for better type support
-      const users = await prisma.$queryRaw`
-        SELECT id, name, email FROM "User" WHERE "clerkId" = ${clerkId} LIMIT 1
-      `;
-
-      const user = users[0];
+    }    try {
+      // Find the user in our database using safe Prisma query
+      const user = await prisma.user.findUnique({
+        where: {
+          clerkId: clerkId
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      });
 
       if (user) {
         c.set("userId", user.id);

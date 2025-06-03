@@ -1,76 +1,152 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, isDebugAllowed } from "@/lib/admin-auth";
+import { withSecurity } from "@/lib/security-middleware";
 
-// GET /api/admin/database-test - Test and fix database connection
+/**
+ * Secured database connection test endpoint (admin only)
+ * GET /api/admin/database-test
+ */
 export async function GET() {
-  try {
-    // Try to connect to the database and get users count
-    const usersCount = await prisma.user.count();
+  return withSecurity(
+    async () => {
+      // Check if admin endpoints are allowed
+      if (!isDebugAllowed()) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Admin endpoints are disabled in production",
+          },
+          { status: 403 }
+        );
+      }
 
-    return NextResponse.json({
-      status: "Connected",
-      users: usersCount,
-      message: "Database connection successful",
-    });
-  } catch (error) {
-    console.error("Database connection error:", error);
-    return NextResponse.json(
-      {
-        error: "Database Connection Error",
-        details: error instanceof Error ? error.message : "Unknown error",
-        help: "Check your DATABASE_URL environment variable",
-      },
-      { status: 500 }
-    );
-  }
+      // Require admin authentication
+      const adminCheck = await requireAdmin();
+      if (adminCheck instanceof NextResponse) {
+        return adminCheck;
+      }
+
+      try {
+        // Test database connection and get basic stats
+        const usersCount = await prisma.user.count();
+        const doctorsCount = await prisma.doctor.count();
+        const appointmentsCount = await prisma.appointment.count();
+
+        return NextResponse.json({
+          success: true,
+          status: "Connected",
+          stats: {
+            users: usersCount,
+            doctors: doctorsCount,
+            appointments: appointmentsCount,
+          },
+          message: "Database connection successful",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error("Database connection error:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Database Connection Error",
+            details: error instanceof Error ? error.message : "Unknown error",
+            help: "Check your DATABASE_URL environment variable",
+            timestamp: new Date().toISOString(),
+          },
+          { status: 500 }
+        );
+      }
+    },
+    {
+      rateLimit: { requests: 5, window: 60 }, // 5 requests per minute
+      validateInput: false,
+    }
+  );
 }
 
-// POST /api/admin/database-test - Force sync all Clerk users
-// This is a utility endpoint that can help ensure users are synced
-export async function POST(req: Request) {
-  try {
-    const { secret } = await req.json();
+/**
+ * Secured database sync endpoint (admin only)
+ * POST /api/admin/database-test
+ */
+export async function POST() {
+  return withSecurity(
+    async () => {
+      // Check if admin endpoints are allowed
+      if (!isDebugAllowed()) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Admin endpoints are disabled in production",
+          },
+          { status: 403 }
+        );
+      }
 
-    // Basic security check (you should use a more secure method in production)
-    if (
-      secret !== process.env.ADMIN_SECRET &&
-      secret !== "admin-tubes-kemjar"
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      // Require admin authentication
+      const adminCheck = await requireAdmin();
+      if (adminCheck instanceof NextResponse) {
+        return adminCheck;
+      }
+
+      try {
+        // Check database connection
+        let dbStatus;
+        try {
+          const usersCount = await prisma.user.count();
+          const doctorsCount = await prisma.doctor.count();
+          const appointmentsCount = await prisma.appointment.count();
+
+          dbStatus = {
+            connected: true,
+            stats: {
+              usersCount,
+              doctorsCount,
+              appointmentsCount,
+            },
+          };
+        } catch (error) {
+          dbStatus = {
+            connected: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          };
+        }
+
+        if (!dbStatus.connected) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Database connection failed",
+              details: dbStatus.error,
+              timestamp: new Date().toISOString(),
+            },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          status: "Database check completed",
+          database: dbStatus,
+          message: "Database is connected and operational",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error("Error in database test:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Internal Server Error",
+            details: error instanceof Error ? error.message : "Unknown error",
+            timestamp: new Date().toISOString(),
+          },
+          { status: 500 }
+        );
+      }
+    },
+    {
+      rateLimit: { requests: 3, window: 60 }, // 3 requests per minute
+      validateInput: true,
     }
-
-    // 1. Check database connection
-    let dbStatus;
-    try {
-      const usersCount = await prisma.user.count();
-      dbStatus = { connected: true, usersCount };
-    } catch (error) {
-      dbStatus = {
-        connected: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-      return NextResponse.json(
-        {
-          error: "Database connection failed",
-          details: dbStatus.error,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      status: "Database check completed",
-      database: dbStatus,
-      message: "Use the dashboard sync button to sync your user",
-    });
-  } catch (error) {
-    console.error("Error in database test:", error);
-    return NextResponse.json(
-      {
-        error: "Internal Server Error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
-  }
+  );
 }

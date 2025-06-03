@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 
-import { FaHeart, FaBars, FaUserAlt } from "react-icons/fa";
+import { FaHeart, FaBars, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 // Removed invalid Router import
 import { useRouter } from "next/navigation";
@@ -64,6 +64,13 @@ const Header: React.FC = () => {
                       onClick={() => router.push("/profile/edit")}
                       labelIcon={<FaUserAlt />}
                       label="Profile"
+                    />
+                  </UserButton.MenuItems>
+                  <UserButton.MenuItems>
+                    <UserButton.Action
+                      onClick={() => router.push("/appointments")}
+                      labelIcon={<FaCalendarAlt />}
+                      label="Appointments"
                     />
                   </UserButton.MenuItems>
                 </UserButton>

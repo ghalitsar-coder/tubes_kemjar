@@ -1,111 +1,160 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/clerk-helper";
+import { auth } from "@clerk/nextjs/server";
+import { withSecurity } from "@/lib/security-middleware";
+import { z } from "zod";
 
-// GET /api/posts - Mendapatkan posts untuk pengguna yang login
+// Input validation schema for post creation
+const createPostSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  content: z.string().min(1, "Content is required").max(5000, "Content too long"),
+});
+
+/**
+ * Secured endpoint to get user's posts (authenticated users only)
+ * GET /api/posts
+ */
 export async function GET() {
-  try {
-    // Get authenticated user
-    const { userId: clerkId } = auth();
+  return withSecurity(
+    async () => {
+      const { userId: clerkId } = await auth();
 
-    if (!clerkId) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized",
-          message: "You must be logged in to view posts",
-        },
-        { status: 401 }
-      );
-    }
-    // Find user in database
-    const user = await prisma.user.findFirst({
-      where: {
-        clerkId: {
-          equals: clerkId,
-        },
-      },
-    });
+      if (!clerkId) {
+        return NextResponse.json(
+          {
+            error: "Unauthorized",
+            message: "You must be logged in to view posts",
+          },
+          { status: 401 }
+        );
+      }
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "User not found",
-          message: "Your account was not found in the database",
-        },
-        { status: 404 }
-      );
-    }
-
-    // Get posts for this user
-    const posts = await prisma.post.findMany({
-      where: {
-        authorId: user.id,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      // Find user in database
+      const user = await prisma.user.findFirst({
+        where: {
+          clerkId: {
+            equals: clerkId,
           },
         },
-      },
-    });
-    return NextResponse.json(posts);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          {
+            error: "User not found",
+            message: "Your account was not found in the database",
+          },
+          { status: 404 }
+        );
+      }
+
+      // Get posts for this user
+      const posts = await prisma.post.findMany({
+        where: {
+          authorId: user.id,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        posts,
+        total: posts.length,
+      });
+    },
+    {
+      rateLimit: { requests: 30, window: 60 }, // 30 requests per minute
+      validateInput: false,
+    }
+  );
 }
 
-// POST /api/posts - Membuat post baru
+/**
+ * Secured endpoint to create a new post (authenticated users only)
+ * POST /api/posts
+ */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { title, content, authorId } = body;
+  return withSecurity(
+    async () => {
+      const { userId: clerkId } = await auth();
 
-    // Validasi input
-    if (!title || !content || !authorId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+      if (!clerkId) {
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
 
-    // Cek apakah author ada
-    const author = await prisma.user.findUnique({
-      where: { id: authorId },
-    });
-
-    if (!author) {
-      return NextResponse.json({ error: "Author not found" }, { status: 404 });
-    }
-
-    // Buat post baru
-    const post = await prisma.post.create({
-      data: {
-        title,
-        content,
-        authorId,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      // Find user in database
+      const user = await prisma.user.findFirst({
+        where: {
+          clerkId: {
+            equals: clerkId,
           },
         },
-      },
-    });
+      });
 
-    return NextResponse.json(post, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+      if (!user) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        );
+      }
+
+      const body = await request.json();
+      
+      // Validate input data
+      const validationResult = createPostSchema.safeParse(body);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          {
+            error: "Invalid input data",
+            details: validationResult.error.errors,
+          },
+          { status: 400 }
+        );
+      }
+
+      const { title, content } = validationResult.data;
+
+      // Create post with authenticated user as author
+      const post = await prisma.post.create({
+        data: {
+          title,
+          content,
+          authorId: user.id, // Use authenticated user's ID, not from request
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Post created successfully",
+        post,
+      }, { status: 201 });
+    },
+    {
+      rateLimit: { requests: 10, window: 60 }, // 10 post creations per minute
+      validateInput: true,
+    }
+  );
 }

@@ -31,14 +31,34 @@ const formSchema = z.object({
   dateOfBirth: z.string().min(1, { message: "Date of birth is required" }),
   gender: z.string().min(1, { message: "Gender is required" }),
   bloodType: z.string().optional(),
-  height: z.coerce.number().positive().optional(),
-  weight: z.coerce.number().positive().optional(),
+  height: z.coerce
+    .number()
+    .positive({ message: "Height must be positive" })
+    .max(300, { message: "Height must be between 0 and 300 cm" })
+    .optional(),
+  weight: z.coerce
+    .number()
+    .positive({ message: "Weight must be positive" })
+    .max(1000, { message: "Weight must be between 0 and 1000 kg" })
+    .optional(),
   allergies: z.string().optional(),
   medicalHistory: z.string().optional(),
   emergencyContact: z
     .string()
     .min(1, { message: "Emergency contact is required" }),
 });
+
+// Define types for API validation errors
+interface ValidationError {
+  code: string;
+  message: string;
+  path: string[];
+}
+
+interface ApiErrorResponse {
+  error: string;
+  details?: ValidationError[];
+}
 
 // Define the form values type from the schema
 type FormValues = z.infer<typeof formSchema>;
@@ -110,11 +130,13 @@ export default function EditPatientProfile() {
       fetchProfile();
     }
   }, [user, isLoaded, router, form]);
-
   const onSubmit = async (values: FormValues) => {
     setError(null);
     setSuccess(null);
     setIsSaving(true);
+
+    // Clear any previous form errors
+    form.clearErrors();
 
     try {
       const response = await fetch("/api/patient/profile", {
@@ -123,10 +145,28 @@ export default function EditPatientProfile() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+      });      if (!response.ok) {
+        const errorData: ApiErrorResponse = await response.json();
+          // Check if we have detailed validation errors
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Set specific field errors from the API response
+          errorData.details.forEach((detail: ValidationError) => {
+            if (detail.path && detail.path.length > 0) {
+              const fieldName = detail.path[0] as keyof FormValues;
+              form.setError(fieldName, {
+                type: "manual",
+                message: detail.message || "Invalid value"
+              });
+            }
+          });
+            // If we have field-specific errors, don't show the general error
+          if (errorData.details.length > 0) {
+            setIsSaving(false);
+            return;
+          }
+        }
+        
+        // Fallback to general error if no specific field errors
         throw new Error(errorData.error || "Failed to save profile");
       }
 
@@ -259,13 +299,12 @@ export default function EditPatientProfile() {
                 <FormField
                   control={form.control}
                   name="height"
-                  render={({ field }) => (
-                    <FormItem className="col-span-1">
+                  render={({ field }) => (                    <FormItem className="col-span-1">
                       <FormLabel>Height (cm)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="Height in centimeters"
+                          placeholder="Height in cm (0-300)"
                           {...field}
                           value={field.value === undefined ? "" : field.value}
                           onChange={(e) => {
@@ -276,6 +315,7 @@ export default function EditPatientProfile() {
                             field.onChange(value);
                           }}
                           min="0"
+                          max="300"
                           step="0.1"
                         />
                       </FormControl>
@@ -288,13 +328,12 @@ export default function EditPatientProfile() {
                 <FormField
                   control={form.control}
                   name="weight"
-                  render={({ field }) => (
-                    <FormItem className="col-span-1">
+                  render={({ field }) => (                    <FormItem className="col-span-1">
                       <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="Weight in kilograms"
+                          placeholder="Weight in kg (0-1000)"
                           {...field}
                           value={field.value === undefined ? "" : field.value}
                           onChange={(e) => {
@@ -305,6 +344,7 @@ export default function EditPatientProfile() {
                             field.onChange(value);
                           }}
                           min="0"
+                          max="1000"
                           step="0.1"
                         />
                       </FormControl>
