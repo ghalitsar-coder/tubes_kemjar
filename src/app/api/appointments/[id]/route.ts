@@ -1,96 +1,107 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { withSecurity } from "@/lib/security-middleware";
 
+/**
+ * Secured endpoint to get appointment by ID
+ * Only accessible by the patient who owns the appointment, the assigned doctor, or admin/staff
+ * GET /api/appointments/[id]
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const { userId: clerkId } = await auth();
+  return withSecurity(
+    async () => {
+      const { userId: clerkId } = await auth();
 
-    if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+      if (!clerkId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: "Invalid appointment ID" },
-        { status: 400 }
-      );
-    }
+      const id = parseInt(params.id);
+      if (isNaN(id)) {
+        return NextResponse.json(
+          { error: "Invalid appointment ID" },
+          { status: 400 }
+        );
+      }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      include: {
-        doctor: true,
-      },
-    });
+      // Get user from database
+      const user = await prisma.user.findUnique({
+        where: { clerkId },
+        include: {
+          doctor: true,
+          patient: true,
+        },
+      });
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    } // Fetch appointment
-    const appointment = await prisma.appointment.findUnique({
-      where: { id },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profilePic: true,
-            patient: {
-              select: {
-                dateOfBirth: true,
-                gender: true,
-                bloodType: true,
-                allergies: true,
-                medicalHistory: true,
-                emergencyContact: true,
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });      }
+
+      // Fetch appointment
+      const appointment = await prisma.appointment.findUnique({
+        where: { id },
+        include: {
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profilePic: true,
+              patient: {
+                select: {
+                  dateOfBirth: true,
+                  gender: true,
+                  bloodType: true,
+                  allergies: true,
+                  medicalHistory: true,
+                  emergencyContact: true,
+                },
+              },
+            },
+          },
+          doctor: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
           },
         },
-        doctor: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-      },
-    });
+      });
 
-    if (!appointment) {
-      return NextResponse.json(
-        { error: "Appointment not found" },
-        { status: 404 }
-      );
+      if (!appointment) {
+        return NextResponse.json(
+          { error: "Appointment not found" },
+          { status: 404 }
+        );
+      }
+
+      // Check permissions: only patient, doctor, admin or staff can see appointment
+      if (
+        user.id !== appointment.patient.id &&
+        !(user.doctor && user.doctor.id === appointment.doctor.id) &&
+        !["ADMIN", "STAFF"].includes(user.role)
+      ) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        appointment,
+      });
+    },
+    {
+      rateLimit: { requests: 30, window: 60 }, // 30 requests per minute
+      validateInput: false,
     }
-
-    // Check permissions: only patient, doctor, admin or staff can see appointment
-    if (
-      user.id !== appointment.patient.id &&
-      !(user.doctor && user.doctor.id === appointment.doctor.id) &&
-      !["ADMIN", "STAFF"].includes(user.role)
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    return NextResponse.json(appointment);
-  } catch (error) {
-    console.error("Error fetching appointment:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+  );
 }
 
 export async function PATCH(

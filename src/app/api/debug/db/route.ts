@@ -1,13 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, isDebugAllowed } from "@/lib/admin-auth";
 
 /**
- * Debugging endpoint untuk memeriksa apakah database koneksi berjalan dengan baik
+ * Secured debugging endpoint for database connection and basic stats (admin only)
  * GET /api/debug/db
  */
 export async function GET() {
+  // Check if debug endpoints are allowed
+  if (!isDebugAllowed()) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Debug endpoints are disabled in production",
+      },
+      { status: 403 }
+    );
+  }
+
+  // Require admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck instanceof NextResponse) {
+    return adminCheck;
+  }
+
   try {
-    // Test basic connection
+    // Test basic connection using safe query
     const testResult = await prisma.$queryRaw`SELECT 1 AS result`;
 
     // Count users

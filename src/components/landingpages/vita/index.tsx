@@ -5,7 +5,7 @@ import { ServicesSection } from "./ServicesSection";
 import { WhyChooseUs } from "./WhyChooseUs";
 import { DoctorsSection } from "./DoctorsSection";
 import TestimonialsSection from "./Testimonials";
-import AppointmentSection from "./Appointment";
+// import AppointmentSection from "./Appointment";
 import FAQSection from "./FAQ";
 import NewsletterSection from "./NewsLetter";
 import Footer from "./Footer";
@@ -19,7 +19,7 @@ const VitaCareHome: React.FC = () => {
       <WhyChooseUs />
       <DoctorsSection />
       <TestimonialsSection />
-      <AppointmentSection />
+      {/* <AppointmentSection /> */}
       <FAQSection />
       <NewsletterSection />
       <Footer />

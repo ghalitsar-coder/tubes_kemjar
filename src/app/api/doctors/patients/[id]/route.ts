@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthFromApiRoute } from "@/lib/clerk-helper";
+import { withSecurity } from "@/lib/security-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    // Get current user from auth
-    const { userId: clerkId } = await getAuthFromApiRoute(request);
+  return withSecurity(
+    async (req: NextRequest) => {
+      try {
+        // Get current user from auth
+        const { userId: clerkId } = await getAuthFromApiRoute(req);
 
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -89,12 +92,17 @@ export async function GET(
       return NextResponse.json({ error: "Patient not found" }, { status: 404 });
     }
 
-    return NextResponse.json(patient);
-  } catch (error) {
-    console.error("Error fetching patient details:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json(patient);    } catch (error) {
+      console.error("Error fetching patient details:", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+  },
+  {
+    rateLimit: { requests: 30, window: 60 }, // 30 requests per minute
+    validateInput: false,
   }
+)(request);
 }

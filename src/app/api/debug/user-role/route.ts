@@ -1,49 +1,73 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/clerk-helper";
 import { prisma } from "@/lib/prisma";
 import { withDatabaseRetry } from "@/lib/prisma-helpers";
+import { requireAdmin, isDebugAllowed } from "@/lib/admin-auth";
 
 export async function GET() {
-  try {
-    // Dapatkan Clerk ID dari auth
-    const { userId: clerkId } = auth();
-
-    // Jika tidak ada user yang login
-    if (!clerkId) {
-      return NextResponse.json({
+  // Check if debug endpoints are allowed
+  if (!isDebugAllowed()) {
+    return NextResponse.json(
+      {
         status: "error",
-        message: "Not authenticated",
-        auth: { clerkId: null },
-      });
-    }    // Dapatkan semua user dengan clerkId tersebut (seharusnya hanya 1)
+        message: "Debug endpoints are disabled in production",
+      },
+      { status: 403 }
+    );
+  }
+
+  // Require admin authentication
+  const adminCheck = await requireAdmin();
+  if (adminCheck instanceof NextResponse) {
+    return adminCheck;
+  }
+
+  const { user } = adminCheck;
+
+  try {    // Get current user data using safe Prisma query
     const userData = await withDatabaseRetry(async () => {
-      return await prisma.$queryRaw`
-        SELECT id, "clerkId", name, email, role FROM "User" WHERE "clerkId" = ${clerkId}
-      `;
+      return await prisma.user.findUnique({
+        where: {
+          clerkId: user.clerkId,
+        },
+        select: {
+          id: true,
+          clerkId: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
     });
 
-    // Dapatkan juga user dengan role ADMIN untuk debugging
+    // Get admin users for debugging using safe Prisma query
     const adminUsers = await withDatabaseRetry(async () => {
-      return await prisma.$queryRaw`
-        SELECT id, "clerkId", name, email, role FROM "User" WHERE role = 'ADMIN' LIMIT 5
-      `;
-    });
-
-    return NextResponse.json({
+      return await prisma.user.findMany({
+        where: {
+          role: "ADMIN",
+        },
+        take: 5,
+        select: {
+          id: true,
+          clerkId: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
+    });    return NextResponse.json({
       status: "success",
-      auth: { clerkId },
+      auth: { clerkId: user.clerkId },
       currentUser: userData,
       adminUsers,
       timestamp: new Date().toISOString(),
-    });  } catch (error) {
+    });} catch (error) {
     console.error("Error in debug endpoint:", error);
     return NextResponse.json(
       {
         status: "error",
         message: error instanceof Error ? error.message : "Unknown error",
-        errorType: error instanceof Error ? error.constructor.name : "Unknown",
-        timestamp: new Date().toISOString(),
-        auth: { clerkId: auth().userId },
+        errorType: error instanceof Error ? error.constructor.name : "Unknown",        timestamp: new Date().toISOString(),
+        auth: { clerkId: null },
       },
       { status: 500 }
     );

@@ -1,20 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { z } from "zod";
+import { AppointmentStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
+// Interface for user with patient data
+interface UserWithPatient {
+  id: number;
+  role: string;
+  patient: {
+    id: number;
+    dateOfBirth: Date;
+    phone: string | null;
+    address: string | null;
+    emergencyContact: string | null;
+    medicalHistory: string | null;
+    allergies: string | null;
+    medications: string | null;
+  } | null;
+}
+
+// Validation schema for appointment booking
+const appointmentSchema = z.object({
+  doctorId: z.number().int().positive("Doctor ID must be a positive integer"),
+  date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Invalid date format",
+  }),
+  startTime: z.string().refine((time) => !isNaN(Date.parse(time)), {
+    message: "Invalid start time format",
+  }),
+  endTime: z.string().refine((time) => !isNaN(Date.parse(time)), {
+    message: "Invalid end time format",
+  }),
+  reason: z.string().min(1, "Reason is required").max(500, "Reason too long"),
+  type: z.enum(["IN_PERSON", "VIDEO_CALL", "PHONE_CALL"]).optional(),
+  notes: z.string().max(1000, "Notes too long").optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    } // Get user from database with patient information
-    const user = (await prisma.user.findUnique({
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });    } // Get user from database with patient information
+    const user = await prisma.user.findUnique({
       where: { clerkId },
       include: {
         patient: true,
       },
-    })) as { id: number; role: string; patient: any | null } | null;
+    }) as UserWithPatient | null;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -37,18 +72,21 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
-    }
-
-    const data = await request.json();
-    const { doctorId, date, startTime, endTime, reason, type, notes } = data;
-
-    // Validate required fields
-    if (!doctorId || !date || !startTime || !endTime || !reason) {
+    }    const data = await request.json();
+    
+    // Validate input data
+    const validationResult = appointmentSchema.safeParse(data);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        {
+          error: "Invalid input data",
+          details: validationResult.error.errors,
+        },
         { status: 400 }
       );
     }
+
+    const { doctorId, date, startTime, endTime, reason, type, notes } = validationResult.data;
 
     // Find doctor
     const doctor = await prisma.doctor.findUnique({
@@ -239,10 +277,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
     const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-
-    // Build where clause based on user role and filters
-    const whereClause: any = {};
+    const endDate = searchParams.get("endDate");    // Build where clause based on user role and filters
+    const whereClause: Prisma.AppointmentWhereInput = {};
 
     if (user.role === "DOCTOR" && user.doctor) {
       whereClause.doctorId = user.doctor.id;
@@ -251,11 +287,9 @@ export async function GET(request: NextRequest) {
     } else if (!["ADMIN", "STAFF"].includes(user.role)) {
       // If user is neither doctor, patient, admin nor staff
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Add status filter if provided
-    if (status) {
-      whereClause.status = status;
+    }    // Add status filter if provided
+    if (status && Object.values(AppointmentStatus).includes(status as AppointmentStatus)) {
+      whereClause.status = status as AppointmentStatus;
     }
 
     // Add date range filter if provided
